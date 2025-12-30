@@ -143,6 +143,14 @@ export function getPuzzleUrl(puzzleSlug: string): string {
 }
 
 /**
+ * Generate the share message for a puzzle link
+ */
+export function generatePuzzleLinkMessage(puzzleTitle: string, puzzleSlug: string): string {
+  const puzzleUrl = getPuzzleUrl(puzzleSlug);
+  return `Try this word puzzle on StrandCraft: ${puzzleTitle} ${puzzleUrl}`;
+}
+
+/**
  * Share a puzzle link using the native share sheet
  * Returns true if share was initiated, false if not available
  */
@@ -151,12 +159,13 @@ export async function sharePuzzleLink(puzzleTitle: string, puzzleSlug: string): 
     return false;
   }
   
-  const puzzleUrl = getPuzzleUrl(puzzleSlug);
+  const shareMessage = generatePuzzleLinkMessage(puzzleTitle, puzzleSlug);
   
+  // Note: We only include text (which already has the URL at the end)
+  // Adding a separate 'url' property would cause the link to appear twice
   const shareData = {
-    title: `Play "${puzzleTitle}" on Strandcraft`,
-    text: `Check out this puzzle: "${puzzleTitle}"`,
-    url: puzzleUrl,
+    title: `StrandCraft: ${puzzleTitle}`,
+    text: shareMessage,
   };
   
   try {

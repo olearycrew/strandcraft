@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { copyToClipboard, canUseNativeShare, sharePuzzleLink, getPuzzleUrl } from '@/lib/utils/share';
+import { copyToClipboard, canUseNativeShare, sharePuzzleLink, generatePuzzleLinkMessage } from '@/lib/utils/share';
 
 interface SharePuzzleProps {
     puzzleTitle: string;
@@ -17,8 +17,8 @@ export default function SharePuzzle({ puzzleTitle, puzzleSlug }: SharePuzzleProp
     }, []);
 
     const handleCopyLink = async () => {
-        const puzzleUrl = getPuzzleUrl(puzzleSlug);
-        const success = await copyToClipboard(puzzleUrl);
+        const shareMessage = generatePuzzleLinkMessage(puzzleTitle, puzzleSlug);
+        const success = await copyToClipboard(shareMessage);
 
         if (success) {
             setShareStatus('copied');
