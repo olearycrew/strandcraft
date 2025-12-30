@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { inter } from "./fonts";
 
 export const metadata: Metadata = {
-  title: "Vercel + Neon",
-  description: "Use Neon with Vercel",
+  title: "StrandCraft - Create Your Own Word Puzzles",
+  description: "A DIY Strands Puzzle Creator — Create and share custom word puzzles inspired by NYT Strands",
 };
 
 export default function RootLayout({
@@ -13,8 +12,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} dark`}>
-      <body>{children}</body>
+    <html lang="en">
+      <body className="antialiased">
+        {children}
+      </body>
     </html>
   );
 }

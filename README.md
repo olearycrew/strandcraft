@@ -1,81 +1,169 @@
-![Vercel with Neon](./docs/home.png)
+# StrandCraft
 
--> View demo: [vercel-marketplace-neon.vercel.app](https://vercel-marketplace-neon.vercel.app/)
+> A DIY Strands Puzzle Creator — Create and share custom word puzzles inspired by NYT Strands
 
-# Neon Postgres
+## Features
 
-A minimal template for building full-stack React applications using Next.js, Vercel, and Neon.
+- 🎮 **Create Custom Puzzles** - Design your own word puzzles with a simple wizard
+- 🔗 **Easy Sharing** - Get a unique link to share your puzzle with anyone
+- 📱 **Mobile-Friendly** - Touch-optimized interface for creating and playing on any device
+- 🌙 **Dark Mode** - Easy on the eyes with a modern dark theme
+- 🎯 **Interactive Gameplay** - Drag to select letters and find hidden words
+- ⚡ **Fast & Serverless** - Built with Next.js and PostgreSQL via Neon
+
+## Tech Stack
+
+- **Framework**: Next.js 16+ (App Router)
+- **Database**: PostgreSQL (Neon serverless)
+- **ORM**: Drizzle ORM
+- **Styling**: Tailwind CSS
+- **Hosting**: Vercel
+- **Language**: TypeScript
 
 ## Getting Started
 
-Click the "Deploy" button to clone this repo, create a new Vercel project, setup the Neon integration, and provision a new Neon database:
+### Prerequisites
 
-[![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fneondatabase-labs%2Fvercel-marketplace-neon%2Ftree%2Fmain&project-name=my-vercel-neon-app&repository-name=my-vercel-neon-app&products=[{%22type%22:%22integration%22,%22integrationSlug%22:%22neon%22,%22productSlug%22:%22neon%22,%22protocol%22:%22storage%22}])
-
-Once the process is complete, you can clone the newly created GitHub repository and start making changes locally.
-
-## Local Setup
+- Node.js 18+ or Bun
+- PostgreSQL database (we recommend [Neon](https://neon.tech) for serverless PostgreSQL)
 
 ### Installation
 
-Install the dependencies:
+1. Clone the repository:
 
 ```bash
+git clone <your-repo-url>
+cd diystrands
+```
+
+2. Install dependencies:
+
+```bash
+bun install
+# or
 npm install
 ```
 
-You can use the package manager of your choice. For example, Vercel also supports `bun install` out of the box.
-
-### Development
-
-#### Create a .env file in the project root
+3. Set up environment variables:
 
 ```bash
 cp .env.example .env
 ```
 
-#### Get your database URL
+Edit `.env` and add your database connection string:
 
-Run `vercel env pull` to fetch the environment variables from your Vercel project.
-
-Alternatively, obtain the database connection string from the Connection Details widget on the [Neon Dashboard](https://console.neon.tech/) and add it to the `.env` file:
-
-```txt
-DATABASE_URL=<postgres://user:pass@host/db>
+```
+DATABASE_URL=postgresql://user:password@host:5432/database
 ```
 
-#### Start the development server
+4. Generate and push the database schema:
 
 ```bash
+bun run db:push
+# or
+npm run db:push
+```
+
+5. Start the development server:
+
+```bash
+bun run dev
+# or
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+6. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Database Commands
 
-#### Neon MCP Server
+- `bun run db:generate` - Generate migration files from schema
+- `bun run db:push` - Push schema changes directly to database (recommended for development)
+- `bun run db:migrate` - Run migrations
+- `bun run db:studio` - Open Drizzle Studio to view/edit database
+
+## Project Structure
 
 ```
-npx neonctl@latest init
+diystrands/
+├── app/                      # Next.js app directory
+│   ├── api/                  # API routes
+│   │   └── puzzles/          # Puzzle CRUD endpoints
+│   ├── create/               # Puzzle creator page
+│   ├── play/[slug]/          # Puzzle player page
+│   ├── how-to-play/          # Instructions page
+│   ├── layout.tsx            # Root layout
+│   └── page.tsx              # Home page
+├── lib/                      # Shared utilities
+│   ├── db/                   # Database configuration
+│   │   ├── index.ts          # Database connection
+│   │   └── schema.ts         # Drizzle schema
+│   └── utils/                # Utility functions
+│       ├── grid.ts           # Grid coordinate utilities
+│       ├── slug.ts           # Slug generation
+│       └── validation.ts     # Puzzle validation
+├── types/                    # TypeScript type definitions
+│   └── puzzle.ts             # Puzzle-related types
+└── plans/                    # Architecture documentation
+    └── architecture.md       # Detailed architecture plan
 ```
 
-The init command installs the Neon MCP (Model Context Protocol) server and authenticates it to Neon using a Neon API key.
+## How It Works
 
-## Learn More
+### Creating a Puzzle
 
-To learn more about Neon, check out the Neon documentation:
+1. **Metadata** - Enter title, author, and theme clue
+2. **Words** - Define your spangram (theme word) and related theme words
+3. **Grid** - Fill in the 8x6 letter grid with your words
+4. **Publish** - Get a unique shareable link
 
-- [Neon on Vercel Fluid Compute](https://neon.com/docs/guides/vercel-connection-methods) - learn about differnet datatabase connection methods on Fluid.
-- [Neon Documentation](https://neon.tech/docs/introduction) - learn about Neon's features and SDKs.
-- [Neon Discord](https://discord.gg/9kf3G4yUZk) - join the Neon Discord server to ask questions and join the community.
-- [ORM Integrations](https://neon.tech/docs/get-started-with-neon/orms) - find Object-Relational Mappers (ORMs) that work with Neon.
+### Playing a Puzzle
 
-To learn more about Next.js, take a look at the following resources:
+1. Click or tap on a letter to start selecting
+2. Drag to adjacent letters (horizontally, vertically, or diagonally)
+3. Release to submit your word
+4. Find all words to win!
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### The Spangram
 
-## Deploy on Vercel
+Every puzzle has one special word called the **spangram**:
 
-Commit and push your code changes to your GitHub repository to automatically trigger a new deployment.
+- Describes the puzzle's theme
+- Spans from one edge of the grid to the opposite edge
+- Highlighted in gold when found
+
+## Deployment
+
+### Deploy to Vercel
+
+1. Push your code to GitHub
+2. Import your repository in [Vercel](https://vercel.com)
+3. Add your `DATABASE_URL` environment variable
+4. Deploy!
+
+Vercel will automatically:
+
+- Build your Next.js app
+- Set up serverless functions for API routes
+- Provide a production URL
+
+### Database Setup
+
+We recommend using [Neon](https://neon.tech) for PostgreSQL:
+
+1. Create a free account at [neon.tech](https://neon.tech)
+2. Create a new project
+3. Copy the connection string
+4. Add it to your Vercel environment variables as `DATABASE_URL`
+5. Run `bun run db:push` to create the tables
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+MIT
+
+## Acknowledgments
+
+Inspired by [NYT Strands](https://www.nytimes.com/games/strands)
