@@ -7,6 +7,7 @@ import { coordToIndex, getLetterAt, GRID_ROWS, GRID_COLS } from '@/lib/utils/gri
 import { isValidEnglishWord } from '@/lib/utils/dictionary';
 import { generateShareText, generateWordOrderEmojis, copyToClipboard, nativeShare, canUseNativeShare } from '@/lib/utils/share';
 import Footer from '@/app/components/Footer';
+import SharePuzzle from '@/app/components/SharePuzzle';
 
 interface FoundWord {
     word: string;
@@ -702,6 +703,9 @@ export default function PlayClient({ slug }: { slug: string }) {
                         </div>
                     </div>
                 )}
+
+                {/* Share Puzzle */}
+                <SharePuzzle puzzleTitle={puzzle.title} puzzleSlug={slug} />
 
                 {/* Footer */}
                 <Footer />

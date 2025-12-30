@@ -133,3 +133,43 @@ export async function nativeShare(options: ShareOptions): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Generate the puzzle URL for sharing
+ */
+export function getPuzzleUrl(puzzleSlug: string): string {
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  return `${baseUrl}/play/${puzzleSlug}`;
+}
+
+/**
+ * Share a puzzle link using the native share sheet
+ * Returns true if share was initiated, false if not available
+ */
+export async function sharePuzzleLink(puzzleTitle: string, puzzleSlug: string): Promise<boolean> {
+  if (!canUseNativeShare()) {
+    return false;
+  }
+  
+  const puzzleUrl = getPuzzleUrl(puzzleSlug);
+  
+  const shareData = {
+    title: `Play "${puzzleTitle}" on Strandcraft`,
+    text: `Check out this puzzle: "${puzzleTitle}"`,
+    url: puzzleUrl,
+  };
+  
+  try {
+    if (navigator.canShare && !navigator.canShare(shareData)) {
+      return false;
+    }
+    
+    await navigator.share(shareData);
+    return true;
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      return true;
+    }
+    return false;
+  }
+}
