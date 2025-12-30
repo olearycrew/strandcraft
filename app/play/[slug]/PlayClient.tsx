@@ -25,7 +25,8 @@ interface HintState {
 
 // LocalStorage helpers for persisting hint words per puzzle
 const getHintStorageKey = (puzzleSlug: string) => `diystrands-hints-${puzzleSlug}`;
-const getHintEnabledKey = () => `diystrands-hints-enabled`;
+// Browser-wide hint preference key (persists across all puzzles)
+const getHintEnabledKey = () => `strandcraft-hints-enabled`;
 
 // LocalStorage helpers for tracking likes and plays
 const getLikeStorageKey = (puzzleSlug: string) => `diystrands-liked-${puzzleSlug}`;
@@ -176,8 +177,13 @@ export default function PlayClient({ slug }: { slug: string }) {
     useEffect(() => {
         fetchPuzzle();
         const storedWords = loadUsedHintWords(slug);
-        if (storedWords.length > 0) {
-            setHintState(prev => ({ ...prev, allTimeUsedWords: storedWords }));
+        const hintsEnabled = loadHintEnabled();
+        if (storedWords.length > 0 || hintsEnabled) {
+            setHintState(prev => ({
+                ...prev,
+                allTimeUsedWords: storedWords.length > 0 ? storedWords : prev.allTimeUsedWords,
+                enabled: hintsEnabled
+            }));
         }
         // Load like state from localStorage
         setLiked(hasLikedPuzzle(slug));
@@ -405,14 +411,19 @@ export default function PlayClient({ slug }: { slug: string }) {
     };
 
     const toggleHints = () => {
-        setHintState(prev => ({
-            ...prev,
-            enabled: !prev.enabled,
-            nonThemeWordsFound: [],
-            // Note: allTimeUsedWords is preserved - words already used cannot be reused
-            hintsUsed: 0,
-            currentHintPath: null,
-        }));
+        setHintState(prev => {
+            const newEnabled = !prev.enabled;
+            // Save the new hint preference to localStorage (browser-wide)
+            saveHintEnabled(newEnabled);
+            return {
+                ...prev,
+                enabled: newEnabled,
+                nonThemeWordsFound: [],
+                // Note: allTimeUsedWords is preserved - words already used cannot be reused
+                hintsUsed: 0,
+                currentHintPath: null,
+            };
+        });
     };
 
     const handleLike = async () => {
