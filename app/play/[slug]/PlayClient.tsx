@@ -3,131 +3,31 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { PuzzlePublic, Coordinate } from '@/types/puzzle';
-import { coordToIndex, getLetterAt, GRID_ROWS, GRID_COLS } from '@/lib/utils/grid';
+import { getLetterAt } from '@/lib/utils/grid';
 import { isValidEnglishWord } from '@/lib/utils/dictionary';
-import { generateShareText, generateWordOrderEmojis, copyToClipboard, nativeShare, canUseNativeShare } from '@/lib/utils/share';
+import {
+    hasLikedPuzzle,
+    setLikedPuzzle,
+    hasPlayedPuzzle,
+    setPlayedPuzzle,
+    hasCompletedPuzzle,
+    setCompletedPuzzle,
+    loadUsedHintWords,
+    saveUsedHintWord,
+    loadHintEnabled,
+    saveHintEnabled,
+} from '@/lib/utils/storage';
 import Footer from '@/app/components/Footer';
 import SharePuzzle from '@/app/components/SharePuzzle';
-
-interface FoundWord {
-    word: string;
-    path: Coordinate[];
-    type: 'theme' | 'spangram';
-}
-
-interface HintState {
-    enabled: boolean;
-    nonThemeWordsFound: string[];       // Current batch (0-3 for progress bar)
-    allTimeUsedWords: string[];         // All words ever used for this puzzle (persisted)
-    hintsUsed: number;
-    currentHintPath: Coordinate[] | null;
-}
-
-// LocalStorage helpers for persisting hint words per puzzle
-const getHintStorageKey = (puzzleSlug: string) => `diystrands-hints-${puzzleSlug}`;
-const getHintEnabledKey = () => `diystrands-hints-enabled`;
-
-// LocalStorage helpers for tracking likes and plays
-const getLikeStorageKey = (puzzleSlug: string) => `diystrands-liked-${puzzleSlug}`;
-const getPlayedStorageKey = (puzzleSlug: string) => `diystrands-played-${puzzleSlug}`;
-const getCompletedStorageKey = (puzzleSlug: string) => `diystrands-completed-${puzzleSlug}`;
-
-const hasLikedPuzzle = (puzzleSlug: string): boolean => {
-    if (typeof window === 'undefined') return false;
-    try {
-        return localStorage.getItem(getLikeStorageKey(puzzleSlug)) === 'true';
-    } catch {
-        return false;
-    }
-};
-
-const setLikedPuzzle = (puzzleSlug: string, liked: boolean): void => {
-    try {
-        if (liked) {
-            localStorage.setItem(getLikeStorageKey(puzzleSlug), 'true');
-        } else {
-            localStorage.removeItem(getLikeStorageKey(puzzleSlug));
-        }
-    } catch {
-        // Ignore storage errors
-    }
-};
-
-const hasPlayedPuzzle = (puzzleSlug: string): boolean => {
-    if (typeof window === 'undefined') return false;
-    try {
-        return localStorage.getItem(getPlayedStorageKey(puzzleSlug)) === 'true';
-    } catch {
-        return false;
-    }
-};
-
-const setPlayedPuzzle = (puzzleSlug: string): void => {
-    try {
-        localStorage.setItem(getPlayedStorageKey(puzzleSlug), 'true');
-    } catch {
-        // Ignore storage errors
-    }
-};
-
-const hasCompletedPuzzle = (puzzleSlug: string): boolean => {
-    if (typeof window === 'undefined') return false;
-    try {
-        return localStorage.getItem(getCompletedStorageKey(puzzleSlug)) === 'true';
-    } catch {
-        return false;
-    }
-};
-
-const setCompletedPuzzle = (puzzleSlug: string): void => {
-    try {
-        localStorage.setItem(getCompletedStorageKey(puzzleSlug), 'true');
-    } catch {
-        // Ignore storage errors
-    }
-};
-
-const loadUsedHintWords = (puzzleSlug: string): string[] => {
-    if (typeof window === 'undefined') return [];
-    try {
-        const stored = localStorage.getItem(getHintStorageKey(puzzleSlug));
-        if (stored) {
-            const data = JSON.parse(stored);
-            return data.usedHintWords || [];
-        }
-    } catch {
-        // Ignore parse errors
-    }
-    return [];
-};
-
-const saveUsedHintWord = (puzzleSlug: string, word: string, existingWords: string[]): string[] => {
-    const newWords = [...existingWords, word];
-    try {
-        localStorage.setItem(getHintStorageKey(puzzleSlug), JSON.stringify({ usedHintWords: newWords }));
-    } catch {
-        // Ignore storage errors (quota exceeded, etc.)
-    }
-    return newWords;
-};
-
-const loadHintEnabled = (): boolean => {
-    if (typeof window === 'undefined') return false;
-    try {
-        const stored = localStorage.getItem(getHintEnabledKey());
-        return stored === 'true';
-    } catch {
-        return false;
-    }
-};
-
-const saveHintEnabled = (enabled: boolean): void => {
-    try {
-        localStorage.setItem(getHintEnabledKey(), enabled.toString());
-    } catch {
-        // Ignore storage errors
-    }
-};
+import {
+    PuzzleGrid,
+    WordInput,
+    FoundWordsList,
+    HintPanel,
+    WinModal,
+    FoundWord,
+    HintState,
+} from './components';
 
 export default function PlayClient({ slug }: { slug: string }) {
     const [puzzle, setPuzzle] = useState<PuzzlePublic | null>(null);
@@ -139,13 +39,6 @@ export default function PlayClient({ slug }: { slug: string }) {
     const [currentPath, setCurrentPath] = useState<Coordinate[]>([]);
     const [gameWon, setGameWon] = useState(false);
     const [feedback, setFeedback] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-
-    // Track window width for responsive SVG calculations
-    const [isMobile, setIsMobile] = useState(false);
-
-    // Share state
-    const [shareStatus, setShareStatus] = useState<'idle' | 'copied' | 'shared' | 'error'>('idle');
-    const [showNativeShare, setShowNativeShare] = useState(false);
 
     // Like state
     const [liked, setLiked] = useState(false);
@@ -161,18 +54,7 @@ export default function PlayClient({ slug }: { slug: string }) {
         currentHintPath: null,
     });
 
-    // Detect mobile viewport
-    useEffect(() => {
-        const checkMobile = () => {
-            setIsMobile(window.innerWidth < 640); // 640px is Tailwind's 'sm' breakpoint
-        };
-
-        checkMobile();
-        window.addEventListener('resize', checkMobile);
-        return () => window.removeEventListener('resize', checkMobile);
-    }, []);
-
-    // Load puzzle and used hint words from localStorage
+    // Load puzzle and state from localStorage
     useEffect(() => {
         fetchPuzzle();
         const storedWords = loadUsedHintWords(slug);
@@ -182,42 +64,29 @@ export default function PlayClient({ slug }: { slug: string }) {
             allTimeUsedWords: storedWords.length > 0 ? storedWords : prev.allTimeUsedWords,
             enabled: hintsEnabled,
         }));
-        // Load like state from localStorage
         setLiked(hasLikedPuzzle(slug));
     }, [slug]);
 
-    // Track play when puzzle is loaded (only once per puzzle per browser)
+    // Track play when puzzle is loaded
     useEffect(() => {
         if (puzzle && !hasPlayedPuzzle(slug)) {
-            // Track that this puzzle has been played
             setPlayedPuzzle(slug);
-            // Increment play count on server
             fetch(`/api/puzzles/${slug}/stats`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'play' }),
             }).catch(console.error);
         }
-        // Update local like count from puzzle data
         if (puzzle) {
             setLikeCount(puzzle.likeCount);
         }
     }, [puzzle, slug]);
 
-    // Check for native share support
-    useEffect(() => {
-        setShowNativeShare(canUseNativeShare());
-    }, []);
-
     const fetchPuzzle = async () => {
         try {
             const response = await fetch(`/api/puzzles/${slug}`);
             const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Failed to load puzzle');
-            }
-
+            if (!response.ok) throw new Error(data.error || 'Failed to load puzzle');
             setPuzzle(data.puzzle);
         } catch (err: any) {
             setError(err.message);
@@ -226,12 +95,16 @@ export default function PlayClient({ slug }: { slug: string }) {
         }
     };
 
+    const pathsMatch = (a: Coordinate[], b: Coordinate[]): boolean => {
+        if (a.length !== b.length) return false;
+        return a.every((coord, i) => coord.row === b[i].row && coord.col === b[i].col);
+    };
+
     const handleCellClick = (row: number, col: number) => {
         if (!puzzle) return;
 
         const newCoord = { row, col };
 
-        // If this is the first letter, start a new path
         if (currentPath.length === 0) {
             setCurrentPath([newCoord]);
             return;
@@ -239,42 +112,48 @@ export default function PlayClient({ slug }: { slug: string }) {
 
         const lastCoord = currentPath[currentPath.length - 1];
 
-        // Check if clicking the last selected cell - deselect it (back up)
         if (lastCoord.row === row && lastCoord.col === col) {
             setCurrentPath(currentPath.slice(0, -1));
             return;
         }
 
-        // Check if adjacent
         const rowDiff = Math.abs(newCoord.row - lastCoord.row);
         const colDiff = Math.abs(newCoord.col - lastCoord.col);
         const isAdjacent = rowDiff <= 1 && colDiff <= 1 && (rowDiff + colDiff > 0);
 
         if (!isAdjacent) {
-            // If not adjacent, start a new path from this cell
             setCurrentPath([newCoord]);
             return;
         }
 
-        // Check if already in path
         const alreadyInPath = currentPath.some(c => c.row === row && c.col === col);
-        if (alreadyInPath) {
-            return;
-        }
+        if (alreadyInPath) return;
 
-        // Add to path
         setCurrentPath([...currentPath, newCoord]);
+    };
+
+    const checkWinCondition = (words: FoundWord[]) => {
+        if (!puzzle) return;
+        const totalWords = 1 + puzzle.themeWords.length;
+        if (words.length === totalWords) {
+            setGameWon(true);
+            if (!hasCompletedPuzzle(slug)) {
+                setCompletedPuzzle(slug);
+                fetch(`/api/puzzles/${slug}/stats`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'complete' }),
+                }).catch(console.error);
+            }
+        }
     };
 
     const handleSubmit = () => {
         if (currentPath.length === 0 || !puzzle) return;
 
-        // Check if the selected path matches any word
         const selectedWord = currentPath.map(coord => getLetterAt(puzzle.gridLetters, coord)).join('');
 
-        // Check if this matches the current hint
         if (hintState.currentHintPath && pathsMatch(currentPath, hintState.currentHintPath)) {
-            // Clear the hint after successful match
             setHintState(prev => ({ ...prev, currentHintPath: null }));
         }
 
@@ -305,19 +184,15 @@ export default function PlayClient({ slug }: { slug: string }) {
             }
         }
 
-        // If hints are enabled and this wasn't a theme word or spangram, check if it's a valid non-theme word
+        // Handle hint word validation
         if (hintState.enabled && !foundThemeWord && selectedWord.length >= 4) {
-            // Check if word was EVER used (not just in current batch) - prevents reusing hint words
             if (!hintState.allTimeUsedWords.includes(selectedWord)) {
-                // Validate against dictionary - only accept real English words
                 if (!isValidEnglishWord(selectedWord)) {
                     setFeedback({ message: `"${selectedWord}" is not a valid English word`, type: 'error' });
                     setTimeout(() => setFeedback(null), 2000);
                 } else {
                     const isThemeWord = puzzle.themeWords.some(tw => tw.word === selectedWord) || selectedWord === puzzle.spangramWord;
-
                     if (!isThemeWord) {
-                        // Save to localStorage and update state with the new word
                         const updatedAllTimeWords = saveUsedHintWord(slug, selectedWord, hintState.allTimeUsedWords);
                         setHintState(prev => ({
                             ...prev,
@@ -329,83 +204,15 @@ export default function PlayClient({ slug }: { slug: string }) {
                     }
                 }
             } else {
-                // Word was already used in a previous hint cycle
                 setFeedback({ message: `"${selectedWord}" was already used for hints`, type: 'error' });
                 setTimeout(() => setFeedback(null), 2000);
             }
         }
 
-        // Reset path
         setCurrentPath([]);
     };
 
-    const handleClear = () => {
-        setCurrentPath([]);
-    };
-
-    const pathsMatch = (a: Coordinate[], b: Coordinate[]): boolean => {
-        if (a.length !== b.length) return false;
-        return a.every((coord, i) => coord.row === b[i].row && coord.col === b[i].col);
-    };
-
-    const checkWinCondition = (words: FoundWord[]) => {
-        if (!puzzle) return;
-        const totalWords = 1 + puzzle.themeWords.length; // spangram + theme words
-        if (words.length === totalWords) {
-            setGameWon(true);
-            // Track completion if not already completed
-            if (!hasCompletedPuzzle(slug)) {
-                setCompletedPuzzle(slug);
-                // Increment completion count on server
-                fetch(`/api/puzzles/${slug}/stats`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'complete' }),
-                }).catch(console.error);
-            }
-        }
-    };
-
-    const getShareOptions = () => {
-        if (!puzzle) return null;
-        return {
-            puzzleTitle: puzzle.title,
-            puzzleSlug: slug,
-            foundWords: foundWords.map(fw => ({ word: fw.word, type: fw.type })),
-            hintsUsed: hintState.hintsUsed,
-            totalWords: 1 + puzzle.themeWords.length,
-        };
-    };
-
-    const handleCopyResults = async () => {
-        const options = getShareOptions();
-        if (!options) return;
-
-        const shareText = generateShareText(options);
-        const success = await copyToClipboard(shareText);
-
-        if (success) {
-            setShareStatus('copied');
-            setTimeout(() => setShareStatus('idle'), 2500);
-        } else {
-            setShareStatus('error');
-            setTimeout(() => setShareStatus('idle'), 2500);
-        }
-    };
-
-    const handleNativeShare = async () => {
-        const options = getShareOptions();
-        if (!options) return;
-
-        const success = await nativeShare(options);
-        if (success) {
-            setShareStatus('shared');
-            setTimeout(() => setShareStatus('idle'), 2500);
-        } else {
-            // Fallback to copy if native share fails
-            handleCopyResults();
-        }
-    };
+    const handleClear = () => setCurrentPath([]);
 
     const toggleHints = () => {
         setHintState(prev => {
@@ -415,7 +222,6 @@ export default function PlayClient({ slug }: { slug: string }) {
                 ...prev,
                 enabled: newEnabled,
                 nonThemeWordsFound: [],
-                // Note: allTimeUsedWords is preserved - words already used cannot be reused
                 hintsUsed: 0,
                 currentHintPath: null,
             };
@@ -424,7 +230,6 @@ export default function PlayClient({ slug }: { slug: string }) {
 
     const handleLike = async () => {
         if (likeLoading) return;
-
         setLikeLoading(true);
         const newLikedState = !liked;
 
@@ -434,7 +239,6 @@ export default function PlayClient({ slug }: { slug: string }) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: newLikedState ? 'like' : 'unlike' }),
             });
-
             if (response.ok) {
                 const data = await response.json();
                 setLiked(newLikedState);
@@ -448,15 +252,22 @@ export default function PlayClient({ slug }: { slug: string }) {
         }
     };
 
+    const canUseHint = (): boolean => {
+        return hintState.enabled && hintState.nonThemeWordsFound.length >= 3 && hintState.currentHintPath === null;
+    };
+
+    const getHintProgress = (): number => {
+        if (!hintState.enabled || hintState.currentHintPath !== null) return 0;
+        return Math.min(hintState.nonThemeWordsFound.length, 3);
+    };
+
     const useHint = () => {
         if (!puzzle || !canUseHint()) return;
 
-        // Find theme words that haven't been found yet (excluding spangram for last)
         const unfoundThemeWords = puzzle.themeWords.filter(
             tw => !foundWords.some(fw => fw.word === tw.word)
         );
 
-        // If all theme words are found, reveal spangram
         if (unfoundThemeWords.length === 0 && !foundWords.some(fw => fw.type === 'spangram')) {
             setHintState(prev => ({
                 ...prev,
@@ -465,7 +276,6 @@ export default function PlayClient({ slug }: { slug: string }) {
                 nonThemeWordsFound: [],
             }));
         } else if (unfoundThemeWords.length > 0) {
-            // Reveal a random unfound theme word
             const randomWord = unfoundThemeWords[Math.floor(Math.random() * unfoundThemeWords.length)];
             setHintState(prev => ({
                 ...prev,
@@ -476,54 +286,9 @@ export default function PlayClient({ slug }: { slug: string }) {
         }
     };
 
-    const canUseHint = (): boolean => {
-        return hintState.enabled &&
-            hintState.nonThemeWordsFound.length >= 3 &&
-            hintState.currentHintPath === null;
-    };
-
-    const getHintProgress = (): number => {
-        if (!hintState.enabled || hintState.currentHintPath !== null) return 0;
-        return Math.min(hintState.nonThemeWordsFound.length, 3);
-    };
-
-    const getCellState = (row: number, col: number): string => {
-        // Check if in current selection
-        const inCurrentPath = currentPath.some(c => c.row === row && c.col === col);
-        if (inCurrentPath) return 'selected';
-
-        // Check if in hint path
-        if (hintState.currentHintPath) {
-            const inHintPath = hintState.currentHintPath.some(c => c.row === row && c.col === col);
-            if (inHintPath) return 'hint';
-        }
-
-        // Check if in found words
-        for (const found of foundWords) {
-            const inFoundPath = found.path.some(c => c.row === row && c.col === col);
-            if (inFoundPath) {
-                return found.type === 'spangram' ? 'found-spangram' : 'found-theme';
-            }
-        }
-
-        return 'default';
-    };
-
-    const getCellClassName = (state: string): string => {
-        const base = 'w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center text-xl sm:text-2xl font-bold rounded cursor-pointer transition-all select-none';
-
-        switch (state) {
-            case 'selected':
-                return `${base} bg-blue-500 text-white scale-105`;
-            case 'hint':
-                return `${base} bg-gray-700 text-white border-2 border-dashed border-yellow-400`;
-            case 'found-spangram':
-                return `${base} bg-yellow-600 text-white`;
-            case 'found-theme':
-                return `${base} bg-blue-700 text-white`;
-            default:
-                return `${base} bg-gray-700 hover:bg-gray-600 text-white`;
-        }
+    const getCurrentWord = (): string => {
+        if (!puzzle || currentPath.length === 0) return '';
+        return currentPath.map(coord => getLetterAt(puzzle.gridLetters, coord)).join('');
     };
 
     if (loading) {
@@ -549,22 +314,21 @@ export default function PlayClient({ slug }: { slug: string }) {
         );
     }
 
+    const totalWords = 1 + puzzle.themeWords.length;
+
     return (
         <main className="min-h-screen bg-gray-900 text-white p-4">
             <div className="max-w-4xl mx-auto py-8">
-                {/* Header */}
                 <div className="mb-8">
-                    <div className="flex items-center justify-between mb-4">
-                        <Link href="/" className="inline-flex items-center text-blue-400 hover:text-blue-300">
-                            ← Back to Home
-                        </Link>
+                    <div className="flex items-center justify-between gap-4 mb-1">
+                        <h1 className="text-3xl font-bold">{puzzle.title}</h1>
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={handleLike}
                                 disabled={likeLoading}
                                 className={`px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2 ${liked
-                                    ? 'bg-pink-600 hover:bg-pink-700 text-white'
-                                    : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                                        ? 'bg-pink-600 hover:bg-pink-700 text-white'
+                                        : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
                                     }`}
                             >
                                 <span>{liked ? '❤️' : '🤍'}</span>
@@ -573,133 +337,34 @@ export default function PlayClient({ slug }: { slug: string }) {
                             <button
                                 onClick={toggleHints}
                                 className={`px-4 py-2 rounded-lg font-semibold transition-colors ${hintState.enabled
-                                    ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
-                                    : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                                        ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                                        : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
                                     }`}
                             >
                                 {hintState.enabled ? '💡 Hints: ON' : '💡 Hints: OFF'}
                             </button>
                         </div>
                     </div>
-                    <h1 className="text-3xl font-bold">{puzzle.title}</h1>
                     <p className="text-gray-400">by {puzzle.author}</p>
                     <p className="text-lg text-gray-300 mt-2">Theme: {puzzle.themeClue}</p>
                 </div>
 
-                {/* Main Game Area - Two Column Layout on iPad+ */}
                 <div className="flex flex-col md:flex-row md:gap-8 md:items-start">
-                    {/* Left Column: Grid and Controls */}
                     <div className="flex-1 mb-8 md:mb-0">
-                        {/* Grid */}
-                        <div className="mb-8 flex justify-center">
-                            <div className="relative inline-block">
-                                <div
-                                    className="inline-grid gap-1 bg-gray-800 p-4 rounded-lg"
-                                    style={{ gridTemplateColumns: `repeat(${GRID_COLS}, minmax(0, 1fr))` }}
-                                >
-                                    {Array.from({ length: GRID_ROWS * GRID_COLS }).map((_, index) => {
-                                        const row = Math.floor(index / GRID_COLS);
-                                        const col = index % GRID_COLS;
-                                        const letter = puzzle.gridLetters[index];
-                                        const state = getCellState(row, col);
+                        <PuzzleGrid
+                            gridLetters={puzzle.gridLetters}
+                            currentPath={currentPath}
+                            foundWords={foundWords}
+                            hintPath={hintState.currentHintPath}
+                            onCellClick={handleCellClick}
+                        />
 
-                                        return (
-                                            <div
-                                                key={index}
-                                                className={getCellClassName(state)}
-                                                onClick={() => handleCellClick(row, col)}
-                                            >
-                                                {letter}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                                {/* SVG overlay for connecting lines and circles */}
-                                <svg
-                                    className="absolute top-0 left-0 w-full h-full pointer-events-none"
-                                    style={{ overflow: 'visible' }}
-                                >
-                                    {foundWords.map((found, wordIndex) => {
-                                        const elements = [];
-                                        // Responsive cell size: 48px on mobile (w-12), 56px on desktop (sm:w-14)
-                                        const cellSize = isMobile ? 48 : 56;
-                                        const gap = 4; // gap-1 = 4px
-                                        const padding = 16; // p-4 = 16px
-                                        const color = found.type === 'spangram' ? '#fbbf24' : '#93c5fd';
+                        <WordInput
+                            currentWord={getCurrentWord()}
+                            onSubmit={handleSubmit}
+                            onClear={handleClear}
+                        />
 
-                                        // Draw lines between letters
-                                        for (let i = 0; i < found.path.length - 1; i++) {
-                                            const from = found.path[i];
-                                            const to = found.path[i + 1];
-
-                                            const fromX = padding + from.col * (cellSize + gap) + cellSize / 2;
-                                            const fromY = padding + from.row * (cellSize + gap) + cellSize / 2;
-                                            const toX = padding + to.col * (cellSize + gap) + cellSize / 2;
-                                            const toY = padding + to.row * (cellSize + gap) + cellSize / 2;
-
-                                            elements.push(
-                                                <line
-                                                    key={`line-${wordIndex}-${i}`}
-                                                    x1={fromX}
-                                                    y1={fromY}
-                                                    x2={toX}
-                                                    y2={toY}
-                                                    stroke={color}
-                                                    strokeWidth="2.5"
-                                                    strokeOpacity="0.5"
-                                                    strokeLinecap="round"
-                                                />
-                                            );
-                                        }
-
-                                        // Draw small circles at each letter position
-                                        for (let i = 0; i < found.path.length; i++) {
-                                            const coord = found.path[i];
-                                            const x = padding + coord.col * (cellSize + gap) + cellSize / 2;
-                                            const y = padding + coord.row * (cellSize + gap) + cellSize / 2;
-
-                                            elements.push(
-                                                <circle
-                                                    key={`circle-${wordIndex}-${i}`}
-                                                    cx={x}
-                                                    cy={y}
-                                                    r="4"
-                                                    fill={color}
-                                                    opacity="0.6"
-                                                />
-                                            );
-                                        }
-
-                                        return elements;
-                                    })}
-                                </svg>
-                            </div>
-                        </div>
-
-                        {/* Current Word Display and Controls */}
-                        {currentPath.length > 0 && (
-                            <div className="flex justify-center">
-                                <div className="bg-gray-800 rounded-lg p-4 flex items-center gap-4">
-                                    <div className="text-2xl font-bold">
-                                        {currentPath.map(coord => getLetterAt(puzzle.gridLetters, coord)).join('')}
-                                    </div>
-                                    <button
-                                        onClick={handleSubmit}
-                                        className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition-colors"
-                                    >
-                                        Submit
-                                    </button>
-                                    <button
-                                        onClick={handleClear}
-                                        className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
-                                    >
-                                        Clear
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Feedback Message */}
                         {feedback && (
                             <div className={`mt-4 p-3 rounded-lg text-center text-ctp-base font-medium ${feedback.type === 'success' ? 'bg-ctp-green' : 'bg-ctp-red'
                                 }`}>
@@ -708,145 +373,30 @@ export default function PlayClient({ slug }: { slug: string }) {
                         )}
                     </div>
 
-                    {/* Right Column: Found Words and Hint System */}
                     <div className="w-full md:w-80 space-y-6">
-                        {/* Found Words */}
-                        <div className="bg-gray-800 rounded-lg p-4">
-                            <h2 className="text-xl font-bold mb-4">Found Words ({foundWords.length}/{1 + puzzle.themeWords.length})</h2>
-                            <div className="space-y-2">
-                                {foundWords.map((found, index) => (
-                                    <div
-                                        key={index}
-                                        className={`p-2 rounded ${found.type === 'spangram' ? 'bg-yellow-600' : 'bg-blue-700'
-                                            }`}
-                                    >
-                                        <div className="font-bold">{found.word}</div>
-                                        {found.type === 'spangram' && (
-                                            <div className="text-xs text-yellow-200">Spangram!</div>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Hint System */}
-                        {hintState.enabled && (
-                            <div className="bg-gray-800 rounded-lg p-4">
-                                <h2 className="text-xl font-bold mb-4">💡 Hint System</h2>
-                                <p className="text-sm text-gray-400 mb-4">
-                                    Find 3 non-theme words to unlock a hint
-                                </p>
-
-                                {/* Progress Bar */}
-                                <div className="mb-4">
-                                    <div className="flex gap-2 mb-2">
-                                        {[0, 1, 2].map(i => (
-                                            <div
-                                                key={i}
-                                                className={`flex-1 h-2 rounded ${i < getHintProgress() ? 'bg-yellow-500' : 'bg-gray-700'
-                                                    }`}
-                                            />
-                                        ))}
-                                    </div>
-                                    <div className="text-sm text-gray-400">
-                                        {getHintProgress()}/3 words found
-                                    </div>
-                                </div>
-
-                                {/* Hint Button */}
-                                <button
-                                    onClick={useHint}
-                                    disabled={!canUseHint()}
-                                    className={`w-full py-2 px-4 rounded-lg font-semibold transition-colors ${canUseHint()
-                                        ? 'bg-yellow-600 hover:bg-yellow-700 text-white cursor-pointer'
-                                        : 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                                        }`}
-                                >
-                                    {hintState.currentHintPath ? 'Hint Active' : 'Use Hint'}
-                                </button>
-
-                                {hintState.currentHintPath && (
-                                    <p className="text-sm text-yellow-400 mt-2">
-                                        A word is highlighted on the grid!
-                                    </p>
-                                )}
-
-                                {hintState.hintsUsed > 0 && (
-                                    <p className="text-xs text-gray-500 mt-2">
-                                        Hints used: {hintState.hintsUsed}
-                                    </p>
-                                )}
-                            </div>
-                        )}
+                        <FoundWordsList foundWords={foundWords} totalWords={totalWords} />
+                        <HintPanel
+                            enabled={hintState.enabled}
+                            progress={getHintProgress()}
+                            canUseHint={canUseHint()}
+                            hasActiveHint={hintState.currentHintPath !== null}
+                            hintsUsed={hintState.hintsUsed}
+                            onUseHint={useHint}
+                        />
                     </div>
                 </div>
 
-                {/* Win Screen */}
                 {gameWon && (
-                    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-                        <div className="bg-gray-800 rounded-lg p-8 max-w-md w-full text-center">
-                            <div className="text-6xl mb-4">🎉</div>
-                            <h2 className="text-3xl font-bold mb-4">Puzzle Complete!</h2>
-                            <p className="text-gray-300 mb-2">
-                                You found all {foundWords.length} words!
-                            </p>
-
-                            {/* Word Order Visualization */}
-                            <div className="text-2xl mb-4 tracking-wider">
-                                {generateWordOrderEmojis(foundWords.map(fw => ({ word: fw.word, type: fw.type })))}
-                            </div>
-
-                            {hintState.hintsUsed > 0 ? (
-                                <p className="text-sm text-gray-400 mb-6">
-                                    {hintState.hintsUsed} hint{hintState.hintsUsed === 1 ? '' : 's'} used
-                                </p>
-                            ) : (
-                                <p className="text-sm text-green-400 mb-6">
-                                    No hints! 🌟
-                                </p>
-                            )}
-
-                            {/* Share Buttons */}
-                            <div className="flex flex-col sm:flex-row gap-3 mb-6">
-                                <button
-                                    onClick={handleCopyResults}
-                                    className={`flex-1 py-3 px-6 rounded-lg font-bold transition-all ${shareStatus === 'copied'
-                                        ? 'bg-green-600 text-white'
-                                        : shareStatus === 'error'
-                                            ? 'bg-red-600 text-white'
-                                            : 'bg-gray-700 hover:bg-gray-600 text-white'
-                                        }`}
-                                >
-                                    {shareStatus === 'copied' ? '✓ Copied!' : shareStatus === 'error' ? 'Failed to copy' : '📋 Copy Results'}
-                                </button>
-
-                                {showNativeShare && (
-                                    <button
-                                        onClick={handleNativeShare}
-                                        className={`flex-1 py-3 px-6 rounded-lg font-bold transition-all ${shareStatus === 'shared'
-                                            ? 'bg-green-600 text-white'
-                                            : 'bg-blue-600 hover:bg-blue-700 text-white'
-                                            }`}
-                                    >
-                                        {shareStatus === 'shared' ? '✓ Shared!' : '📤 Share'}
-                                    </button>
-                                )}
-                            </div>
-
-                            <Link
-                                href="/"
-                                className="inline-block text-blue-400 hover:text-blue-300 transition-colors"
-                            >
-                                ← Back to Home
-                            </Link>
-                        </div>
-                    </div>
+                    <WinModal
+                        foundWords={foundWords}
+                        hintsUsed={hintState.hintsUsed}
+                        totalWords={totalWords}
+                        puzzleTitle={puzzle.title}
+                        puzzleSlug={slug}
+                    />
                 )}
 
-                {/* Share Puzzle */}
                 <SharePuzzle puzzleTitle={puzzle.title} puzzleSlug={slug} />
-
-                {/* Footer */}
                 <Footer />
             </div>
         </main>
