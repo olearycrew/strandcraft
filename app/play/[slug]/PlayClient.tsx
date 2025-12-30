@@ -1,9 +1,10 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { PuzzlePublic, Coordinate } from '@/types/puzzle';
 import { coordToIndex, getLetterAt, GRID_ROWS, GRID_COLS } from '@/lib/utils/grid';
+import { isValidEnglishWord } from '@/lib/utils/dictionary';
 
 interface FoundWord {
     word: string;
@@ -208,20 +209,24 @@ export default function PlayClient({ slug }: { slug: string }) {
         if (hintState.enabled && !foundThemeWord && selectedWord.length >= 4) {
             // Check if word was EVER used (not just in current batch) - prevents reusing hint words
             if (!hintState.allTimeUsedWords.includes(selectedWord)) {
-                // In a real implementation, you'd validate against a dictionary
-                // For now, we'll accept any 4+ letter word that's not a theme word
-                const isThemeWord = puzzle.themeWords.some(tw => tw.word === selectedWord) || selectedWord === puzzle.spangramWord;
-
-                if (!isThemeWord) {
-                    // Save to localStorage and update state with the new word
-                    const updatedAllTimeWords = saveUsedHintWord(slug, selectedWord, hintState.allTimeUsedWords);
-                    setHintState(prev => ({
-                        ...prev,
-                        nonThemeWordsFound: [...prev.nonThemeWordsFound, selectedWord],
-                        allTimeUsedWords: updatedAllTimeWords
-                    }));
-                    setFeedback({ message: `"${selectedWord}" added to hint progress!`, type: 'success' });
+                // Validate against dictionary - only accept real English words
+                if (!isValidEnglishWord(selectedWord)) {
+                    setFeedback({ message: `"${selectedWord}" is not a valid English word`, type: 'error' });
                     setTimeout(() => setFeedback(null), 2000);
+                } else {
+                    const isThemeWord = puzzle.themeWords.some(tw => tw.word === selectedWord) || selectedWord === puzzle.spangramWord;
+
+                    if (!isThemeWord) {
+                        // Save to localStorage and update state with the new word
+                        const updatedAllTimeWords = saveUsedHintWord(slug, selectedWord, hintState.allTimeUsedWords);
+                        setHintState(prev => ({
+                            ...prev,
+                            nonThemeWordsFound: [...prev.nonThemeWordsFound, selectedWord],
+                            allTimeUsedWords: updatedAllTimeWords
+                        }));
+                        setFeedback({ message: `"${selectedWord}" added to hint progress!`, type: 'success' });
+                        setTimeout(() => setFeedback(null), 2000);
+                    }
                 }
             } else {
                 // Word was already used in a previous hint cycle

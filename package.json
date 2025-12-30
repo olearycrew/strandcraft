@@ -15,6 +15,7 @@
     "@vercel/functions": "^3.3.3",
     "@vercel/og": "^0.8.6",
     "@vercel/postgres": "^0.10.0",
+    "an-array-of-english-words": "^2.0.0",
     "drizzle-kit": "^0.31.8",
     "drizzle-orm": "^0.45.1",
     "nanoid": "^5.1.6",
