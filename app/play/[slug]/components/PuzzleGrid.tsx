@@ -18,13 +18,13 @@ function getCellClassName(state: CellState): string {
 
     switch (state) {
         case 'selected':
-            return `${base} bg-ctp-blue text-ctp-base scale-105`;
+            return `${base} bg-transparent text-ctp-text scale-105 z-10`;
         case 'hint':
             return `${base} bg-ctp-surface1 text-ctp-text border-2 border-dashed border-ctp-yellow`;
         case 'found-spangram':
-            return `${base} bg-ctp-yellow text-ctp-base`;
+            return `${base} bg-transparent text-ctp-base z-10`;
         case 'found-theme':
-            return `${base} bg-ctp-blue text-ctp-base`;
+            return `${base} bg-transparent text-ctp-base z-10`;
         default:
             return `${base} bg-ctp-surface1 hover:bg-ctp-surface2 text-ctp-text`;
     }
@@ -104,10 +104,54 @@ export default function PuzzleGrid({
                     className="absolute top-0 left-0 w-full h-full pointer-events-none"
                     style={{ overflow: 'visible' }}
                 >
+                    {/* Current selection path - lines first, then circles on top */}
+                    {currentPath.length > 0 && (
+                        <>
+                            {/* Connecting lines for current selection */}
+                            {currentPath.slice(0, -1).map((from, i) => {
+                                const to = currentPath[i + 1];
+                                const fromX = padding + from.col * (cellSize + gap) + cellSize / 2;
+                                const fromY = padding + from.row * (cellSize + gap) + cellSize / 2;
+                                const toX = padding + to.col * (cellSize + gap) + cellSize / 2;
+                                const toY = padding + to.row * (cellSize + gap) + cellSize / 2;
+                                return (
+                                    <line
+                                        key={`current-line-${i}`}
+                                        x1={fromX}
+                                        y1={fromY}
+                                        x2={toX}
+                                        y2={toY}
+                                        stroke={BLUE}
+                                        strokeWidth="10"
+                                        strokeLinecap="round"
+                                        opacity="0.6"
+                                    />
+                                );
+                            })}
+
+                            {/* Circular backgrounds for current selection */}
+                            {currentPath.map((coord, i) => {
+                                const x = padding + coord.col * (cellSize + gap) + cellSize / 2;
+                                const y = padding + coord.row * (cellSize + gap) + cellSize / 2;
+                                return (
+                                    <circle
+                                        key={`current-circle-${i}`}
+                                        cx={x}
+                                        cy={y}
+                                        r={cellSize / 2 - 2}
+                                        fill={BLUE}
+                                        opacity="0.5"
+                                    />
+                                );
+                            })}
+                        </>
+                    )}
+
                     {foundWords.map((found, wordIndex) => {
                         const elements = [];
                         const color = found.type === 'spangram' ? YELLOW : BLUE;
 
+                        // Draw connecting lines first (behind circles)
                         for (let i = 0; i < found.path.length - 1; i++) {
                             const from = found.path[i];
                             const to = found.path[i + 1];
@@ -125,13 +169,14 @@ export default function PuzzleGrid({
                                     x2={toX}
                                     y2={toY}
                                     stroke={color}
-                                    strokeWidth="2.5"
-                                    strokeOpacity="0.5"
+                                    strokeWidth="10"
                                     strokeLinecap="round"
+                                    opacity="0.6"
                                 />
                             );
                         }
 
+                        // Draw large circular backgrounds on top of lines
                         for (let i = 0; i < found.path.length; i++) {
                             const coord = found.path[i];
                             const x = padding + coord.col * (cellSize + gap) + cellSize / 2;
@@ -142,9 +187,9 @@ export default function PuzzleGrid({
                                     key={`circle-${wordIndex}-${i}`}
                                     cx={x}
                                     cy={y}
-                                    r="4"
+                                    r={cellSize / 2 - 2}
                                     fill={color}
-                                    opacity="0.6"
+                                    opacity="0.7"
                                 />
                             );
                         }
