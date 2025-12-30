@@ -16,7 +16,7 @@ export default function Home() {
         </div>
 
         {/* Action Cards */}
-        <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-6 max-w-6xl mx-auto">
           <Link
             href="/create"
             className="group bg-gray-800 hover:bg-gray-700 rounded-2xl p-8 transition-all duration-200 hover:scale-105 border-2 border-gray-700 hover:border-blue-500"
@@ -26,6 +26,32 @@ export default function Home() {
               <h2 className="text-2xl font-bold">CREATE A PUZZLE</h2>
               <p className="text-gray-400">
                 Design your own word puzzle and share it with friends
+              </p>
+            </div>
+          </Link>
+
+          <Link
+            href="/my-puzzles"
+            className="group bg-gray-800 hover:bg-gray-700 rounded-2xl p-8 transition-all duration-200 hover:scale-105 border-2 border-gray-700 hover:border-yellow-500"
+          >
+            <div className="space-y-4">
+              <div className="text-5xl">📝</div>
+              <h2 className="text-2xl font-bold">MY PUZZLES</h2>
+              <p className="text-gray-400">
+                View and manage your created puzzles
+              </p>
+            </div>
+          </Link>
+
+          <Link
+            href="/community"
+            className="group bg-gray-800 hover:bg-gray-700 rounded-2xl p-8 transition-all duration-200 hover:scale-105 border-2 border-gray-700 hover:border-purple-500"
+          >
+            <div className="space-y-4">
+              <div className="text-5xl">🧩</div>
+              <h2 className="text-2xl font-bold">COMMUNITY</h2>
+              <p className="text-gray-400">
+                Play puzzles created by the community
               </p>
             </div>
           </Link>
@@ -42,11 +68,12 @@ export default function Home() {
               </p>
             </div>
           </Link>
+
         </div>
 
         {/* Footer */}
         <div className="text-sm text-gray-500">
-          <p>Inspired by NYT Strands • Made with ❤️</p>
+          <p>Inspired by (but not affiliated with) NYT Strands • Made with 🖤💛 in Maryland</p>
         </div>
       </div>
     </main>
