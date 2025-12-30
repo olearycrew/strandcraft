@@ -1,5 +1,8 @@
 // app/community/page.tsx
 import Link from 'next/link';
+
+// Force dynamic rendering - fetch fresh data on every request
+export const dynamic = 'force-dynamic';
 import { db } from '@/lib/db';
 import { puzzles } from '@/lib/db/schema';
 import { desc } from 'drizzle-orm';
