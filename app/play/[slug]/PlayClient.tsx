@@ -5,6 +5,7 @@ import Link from 'next/link';
 import type { PuzzlePublic, Coordinate } from '@/types/puzzle';
 import { coordToIndex, getLetterAt, GRID_ROWS, GRID_COLS } from '@/lib/utils/grid';
 import { isValidEnglishWord } from '@/lib/utils/dictionary';
+import { generateShareText, generateWordOrderEmojis, copyToClipboard, nativeShare, canUseNativeShare } from '@/lib/utils/share';
 
 interface FoundWord {
     word: string;
@@ -80,6 +81,10 @@ export default function PlayClient({ slug }: { slug: string }) {
     // Track window width for responsive SVG calculations
     const [isMobile, setIsMobile] = useState(false);
 
+    // Share state
+    const [shareStatus, setShareStatus] = useState<'idle' | 'copied' | 'shared' | 'error'>('idle');
+    const [showNativeShare, setShowNativeShare] = useState(false);
+
     // Hint system state
     const [hintState, setHintState] = useState<HintState>({
         enabled: false,
@@ -108,6 +113,11 @@ export default function PlayClient({ slug }: { slug: string }) {
             setHintState(prev => ({ ...prev, allTimeUsedWords: storedWords }));
         }
     }, [slug]);
+
+    // Check for native share support
+    useEffect(() => {
+        setShowNativeShare(canUseNativeShare());
+    }, []);
 
     const fetchPuzzle = async () => {
         try {
@@ -253,6 +263,47 @@ export default function PlayClient({ slug }: { slug: string }) {
         const totalWords = 1 + puzzle.themeWords.length; // spangram + theme words
         if (words.length === totalWords) {
             setGameWon(true);
+        }
+    };
+
+    const getShareOptions = () => {
+        if (!puzzle) return null;
+        return {
+            puzzleTitle: puzzle.title,
+            puzzleSlug: slug,
+            foundWords: foundWords.map(fw => ({ word: fw.word, type: fw.type })),
+            hintsUsed: hintState.hintsUsed,
+            totalWords: 1 + puzzle.themeWords.length,
+        };
+    };
+
+    const handleCopyResults = async () => {
+        const options = getShareOptions();
+        if (!options) return;
+
+        const shareText = generateShareText(options);
+        const success = await copyToClipboard(shareText);
+
+        if (success) {
+            setShareStatus('copied');
+            setTimeout(() => setShareStatus('idle'), 2500);
+        } else {
+            setShareStatus('error');
+            setTimeout(() => setShareStatus('idle'), 2500);
+        }
+    };
+
+    const handleNativeShare = async () => {
+        const options = getShareOptions();
+        if (!options) return;
+
+        const success = await nativeShare(options);
+        if (success) {
+            setShareStatus('shared');
+            setTimeout(() => setShareStatus('idle'), 2500);
+        } else {
+            // Fallback to copy if native share fails
+            handleCopyResults();
         }
     };
 
@@ -589,23 +640,63 @@ export default function PlayClient({ slug }: { slug: string }) {
 
                 {/* Win Screen */}
                 {gameWon && (
-                    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-                        <div className="bg-gray-800 rounded-lg p-8 max-w-md text-center">
+                    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+                        <div className="bg-gray-800 rounded-lg p-8 max-w-md w-full text-center">
                             <div className="text-6xl mb-4">🎉</div>
                             <h2 className="text-3xl font-bold mb-4">Puzzle Complete!</h2>
-                            <p className="text-gray-300 mb-6">
+                            <p className="text-gray-300 mb-2">
                                 You found all {foundWords.length} words!
                             </p>
-                            {hintState.hintsUsed > 0 && (
-                                <p className="text-sm text-gray-400 mb-4">
-                                    Hints used: {hintState.hintsUsed}
+                            
+                            {/* Word Order Visualization */}
+                            <div className="text-2xl mb-4 tracking-wider">
+                                {generateWordOrderEmojis(foundWords.map(fw => ({ word: fw.word, type: fw.type })))}
+                            </div>
+                            
+                            {hintState.hintsUsed > 0 ? (
+                                <p className="text-sm text-gray-400 mb-6">
+                                    {hintState.hintsUsed} hint{hintState.hintsUsed === 1 ? '' : 's'} used
+                                </p>
+                            ) : (
+                                <p className="text-sm text-green-400 mb-6">
+                                    No hints! 🌟
                                 </p>
                             )}
+                            
+                            {/* Share Buttons */}
+                            <div className="flex flex-col sm:flex-row gap-3 mb-6">
+                                <button
+                                    onClick={handleCopyResults}
+                                    className={`flex-1 py-3 px-6 rounded-lg font-bold transition-all ${
+                                        shareStatus === 'copied'
+                                            ? 'bg-green-600 text-white'
+                                            : shareStatus === 'error'
+                                            ? 'bg-red-600 text-white'
+                                            : 'bg-gray-700 hover:bg-gray-600 text-white'
+                                    }`}
+                                >
+                                    {shareStatus === 'copied' ? '✓ Copied!' : shareStatus === 'error' ? 'Failed to copy' : '📋 Copy Results'}
+                                </button>
+                                
+                                {showNativeShare && (
+                                    <button
+                                        onClick={handleNativeShare}
+                                        className={`flex-1 py-3 px-6 rounded-lg font-bold transition-all ${
+                                            shareStatus === 'shared'
+                                                ? 'bg-green-600 text-white'
+                                                : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                        }`}
+                                    >
+                                        {shareStatus === 'shared' ? '✓ Shared!' : '📤 Share'}
+                                    </button>
+                                )}
+                            </div>
+                            
                             <Link
                                 href="/"
-                                className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+                                className="inline-block text-blue-400 hover:text-blue-300 transition-colors"
                             >
-                                Back to Home
+                                ← Back to Home
                             </Link>
                         </div>
                     </div>
