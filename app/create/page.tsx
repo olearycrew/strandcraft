@@ -359,7 +359,7 @@ export default function CreatePage() {
                             <>
                                 <div className="bg-gray-800 p-4 rounded-lg">
                                     <h3 className="font-bold mb-3">Preview (colors show word placement)</h3>
-                                    <div className="inline-block">
+                                    <div className="inline-block relative">
                                         <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${GRID_COLS}, minmax(0, 1fr))` }}>
                                             {Array.from({ length: GRID_ROWS * GRID_COLS }).map((_, index) => {
                                                 const row = Math.floor(index / GRID_COLS);
@@ -378,6 +378,120 @@ export default function CreatePage() {
                                                 );
                                             })}
                                         </div>
+                                        {/* SVG overlay for connecting lines and circles */}
+                                        <svg
+                                            className="absolute top-0 left-0 w-full h-full pointer-events-none"
+                                            style={{ overflow: 'visible' }}
+                                        >
+                                            {/* Draw spangram path */}
+                                            {spangramPath.length > 0 && (() => {
+                                                const elements = [];
+                                                const cellSize = 48; // w-12 = 48px
+                                                const gap = 4; // gap-1 = 4px
+                                                const color = '#fbbf24';
+
+                                                // Draw lines
+                                                for (let i = 0; i < spangramPath.length - 1; i++) {
+                                                    const from = spangramPath[i];
+                                                    const to = spangramPath[i + 1];
+
+                                                    const fromX = from.col * (cellSize + gap) + cellSize / 2;
+                                                    const fromY = from.row * (cellSize + gap) + cellSize / 2;
+                                                    const toX = to.col * (cellSize + gap) + cellSize / 2;
+                                                    const toY = to.row * (cellSize + gap) + cellSize / 2;
+
+                                                    elements.push(
+                                                        <line
+                                                            key={`spangram-line-${i}`}
+                                                            x1={fromX}
+                                                            y1={fromY}
+                                                            x2={toX}
+                                                            y2={toY}
+                                                            stroke={color}
+                                                            strokeWidth="2"
+                                                            strokeOpacity="0.5"
+                                                            strokeLinecap="round"
+                                                        />
+                                                    );
+                                                }
+
+                                                // Draw small circles
+                                                for (let i = 0; i < spangramPath.length; i++) {
+                                                    const coord = spangramPath[i];
+                                                    const x = coord.col * (cellSize + gap) + cellSize / 2;
+                                                    const y = coord.row * (cellSize + gap) + cellSize / 2;
+
+                                                    elements.push(
+                                                        <circle
+                                                            key={`spangram-circle-${i}`}
+                                                            cx={x}
+                                                            cy={y}
+                                                            r="3.5"
+                                                            fill={color}
+                                                            opacity="0.6"
+                                                        />
+                                                    );
+                                                }
+
+                                                return elements;
+                                            })()}
+
+                                            {/* Draw theme word paths */}
+                                            {themeWordPaths.map((path, wordIndex) => {
+                                                const elements = [];
+                                                const cellSize = 48;
+                                                const gap = 4;
+
+                                                // Get color based on word index
+                                                const colors = ['#93c5fd', '#d8b4fe', '#f9a8d4', '#86efac', '#fdba74', '#67e8f9', '#fca5a5', '#a5b4fc'];
+                                                const color = colors[wordIndex % colors.length];
+
+                                                // Draw lines
+                                                for (let i = 0; i < path.length - 1; i++) {
+                                                    const from = path[i];
+                                                    const to = path[i + 1];
+
+                                                    const fromX = from.col * (cellSize + gap) + cellSize / 2;
+                                                    const fromY = from.row * (cellSize + gap) + cellSize / 2;
+                                                    const toX = to.col * (cellSize + gap) + cellSize / 2;
+                                                    const toY = to.row * (cellSize + gap) + cellSize / 2;
+
+                                                    elements.push(
+                                                        <line
+                                                            key={`word-${wordIndex}-line-${i}`}
+                                                            x1={fromX}
+                                                            y1={fromY}
+                                                            x2={toX}
+                                                            y2={toY}
+                                                            stroke={color}
+                                                            strokeWidth="2"
+                                                            strokeOpacity="0.5"
+                                                            strokeLinecap="round"
+                                                        />
+                                                    );
+                                                }
+
+                                                // Draw small circles
+                                                for (let i = 0; i < path.length; i++) {
+                                                    const coord = path[i];
+                                                    const x = coord.col * (cellSize + gap) + cellSize / 2;
+                                                    const y = coord.row * (cellSize + gap) + cellSize / 2;
+
+                                                    elements.push(
+                                                        <circle
+                                                            key={`word-${wordIndex}-circle-${i}`}
+                                                            cx={x}
+                                                            cy={y}
+                                                            r="3.5"
+                                                            fill={color}
+                                                            opacity="0.6"
+                                                        />
+                                                    );
+                                                }
+
+                                                return elements;
+                                            })}
+                                        </svg>
                                     </div>
                                     <div className="mt-4 flex flex-wrap gap-3 text-sm">
                                         <div className="flex items-center gap-2">
