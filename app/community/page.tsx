@@ -103,7 +103,7 @@ export default async function CommunityPage({ searchParams }: PageProps) {
     ];
 
     return (
-        <main className="min-h-screen bg-gray-900 text-white">
+        <main className="min-h-screen bg-ctp-base text-ctp-text">
             <div className="max-w-6xl mx-auto px-4 py-8">
                 {/* Header */}
                 <div className="mb-8">

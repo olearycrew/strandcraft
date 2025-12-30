@@ -297,7 +297,7 @@ export default function CreatePage() {
     };
 
     return (
-        <main className="min-h-screen bg-gray-900 text-white p-4">
+        <main className="min-h-screen bg-ctp-base text-ctp-text p-4">
             <div className="max-w-4xl mx-auto py-8">
                 <Link href="/" className="inline-flex items-center text-blue-400 hover:text-blue-300 mb-6">
                     ← Back to Home

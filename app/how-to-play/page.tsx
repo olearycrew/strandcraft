@@ -4,7 +4,7 @@ import Footer from '@/app/components/Footer';
 
 export default function HowToPlay() {
     return (
-        <main className="min-h-screen bg-gray-900 text-white p-4">
+        <main className="min-h-screen bg-ctp-base text-ctp-text p-4">
             <div className="max-w-3xl mx-auto py-12 space-y-8">
                 <Link
                     href="/"

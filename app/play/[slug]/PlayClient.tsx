@@ -293,7 +293,7 @@ export default function PlayClient({ slug }: { slug: string }) {
 
     if (loading) {
         return (
-            <main className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+            <main className="min-h-screen bg-ctp-base text-ctp-text flex items-center justify-center">
                 <div className="text-xl">Loading puzzle...</div>
             </main>
         );
@@ -301,7 +301,7 @@ export default function PlayClient({ slug }: { slug: string }) {
 
     if (error || !puzzle) {
         return (
-            <main className="min-h-screen bg-gray-900 text-white flex items-center justify-center p-4">
+            <main className="min-h-screen bg-ctp-base text-ctp-text flex items-center justify-center p-4">
                 <div className="text-center space-y-4">
                     <div className="text-6xl">😕</div>
                     <h1 className="text-2xl font-bold">Puzzle Not Found</h1>
@@ -317,7 +317,7 @@ export default function PlayClient({ slug }: { slug: string }) {
     const totalWords = 1 + puzzle.themeWords.length;
 
     return (
-        <main className="min-h-screen bg-gray-900 text-white p-4">
+        <main className="min-h-screen bg-ctp-base text-ctp-text p-4">
             <div className="max-w-4xl mx-auto py-8">
                 <div className="mb-8">
                     <div className="flex items-center justify-between gap-4 mb-1">
