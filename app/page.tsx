@@ -34,6 +34,16 @@ function LetterTile({ letter, color, index }: { letter: string; color: string; i
   );
 }
 
+function EmojiTile({ emoji, color }: { emoji: string; color: string }) {
+  return (
+    <div
+      className={`${color} w-14 h-14 rounded-lg flex items-center justify-center text-3xl shadow-lg border-2 border-ctp-crust/20`}
+    >
+      {emoji}
+    </div>
+  );
+}
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-ctp-base text-ctp-text flex flex-col items-center justify-center p-4">
@@ -77,7 +87,7 @@ export default function Home() {
             className="group bg-ctp-surface0 hover:bg-ctp-surface1 rounded-2xl p-8 transition-all duration-200 hover:scale-105 border-2 border-ctp-surface1 hover:border-ctp-blue"
           >
             <div className="space-y-4">
-              <div className="text-5xl">➕</div>
+              <EmojiTile emoji="➕" color="bg-ctp-blue" />
               <h2 className="text-2xl font-bold">CREATE A PUZZLE</h2>
               <p className="text-ctp-subtext0">
                 Design your own word puzzle and share it with friends
@@ -90,7 +100,7 @@ export default function Home() {
             className="group bg-ctp-surface0 hover:bg-ctp-surface1 rounded-2xl p-8 transition-all duration-200 hover:scale-105 border-2 border-ctp-surface1 hover:border-ctp-yellow"
           >
             <div className="space-y-4">
-              <div className="text-5xl">📝</div>
+              <EmojiTile emoji="📝" color="bg-ctp-yellow" />
               <h2 className="text-2xl font-bold">MY PUZZLES</h2>
               <p className="text-ctp-subtext0">
                 View and manage your created puzzles
@@ -103,7 +113,7 @@ export default function Home() {
             className="group bg-ctp-surface0 hover:bg-ctp-surface1 rounded-2xl p-8 transition-all duration-200 hover:scale-105 border-2 border-ctp-surface1 hover:border-ctp-mauve"
           >
             <div className="space-y-4">
-              <div className="text-5xl">🧩</div>
+              <EmojiTile emoji="🧩" color="bg-ctp-mauve" />
               <h2 className="text-2xl font-bold">COMMUNITY</h2>
               <p className="text-ctp-subtext0">
                 Play puzzles created by the community
@@ -116,7 +126,7 @@ export default function Home() {
             className="group bg-ctp-surface0 hover:bg-ctp-surface1 rounded-2xl p-8 transition-all duration-200 hover:scale-105 border-2 border-ctp-surface1 hover:border-ctp-green"
           >
             <div className="space-y-4">
-              <div className="text-5xl">▶</div>
+              <EmojiTile emoji="▶" color="bg-ctp-green" />
               <h2 className="text-2xl font-bold">HOW TO PLAY</h2>
               <p className="text-ctp-subtext0">
                 Learn the rules and start solving puzzles
