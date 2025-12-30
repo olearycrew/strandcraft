@@ -4,22 +4,22 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-// Smaller letter tiles for the mini logo
+// Smaller letter tiles for the mini logo - Using Catppuccin colors
 const strandColors = [
-    'bg-yellow-600', // S
-    'bg-blue-600',   // T
-    'bg-purple-600', // R
-    'bg-pink-600',   // A
-    'bg-green-600',  // N
-    'bg-orange-600', // D
+    'bg-ctp-yellow', // S
+    'bg-ctp-blue',   // T
+    'bg-ctp-mauve',  // R
+    'bg-ctp-pink',   // A
+    'bg-ctp-green',  // N
+    'bg-ctp-peach',  // D
 ];
 
 const craftColors = [
-    'bg-cyan-600',   // C
-    'bg-blue-600',   // R
-    'bg-purple-600', // A
-    'bg-pink-600',   // F
-    'bg-green-600',  // T
+    'bg-ctp-teal',   // C
+    'bg-ctp-blue',   // R
+    'bg-ctp-mauve',  // A
+    'bg-ctp-pink',   // F
+    'bg-ctp-green',  // T
 ];
 
 const strandLetters = 'STRAND'.split('');
@@ -28,7 +28,7 @@ const craftLetters = 'CRAFT'.split('');
 function MiniLetterTile({ letter, color, className = '' }: { letter: string; color: string; className?: string }) {
     return (
         <div
-            className={`${color} w-6 h-6 rounded flex items-center justify-center text-white font-bold text-sm shadow border border-white/20 transition-all duration-300 ${className}`}
+            className={`${color} w-6 h-6 rounded flex items-center justify-center text-ctp-crust font-bold text-sm shadow border border-ctp-crust/20 transition-all duration-300 ${className}`}
         >
             {letter}
         </div>
@@ -44,7 +44,7 @@ export default function Header() {
     }
 
     return (
-        <header className="bg-gray-900 border-b border-gray-700 sticky top-0 z-50 animate-in slide-in-from-top duration-300">
+        <header className="bg-ctp-mantle border-b border-ctp-surface0 sticky top-0 z-50 animate-in slide-in-from-top duration-300">
             <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
                 {/* Mini Logo - S and C on mobile, full STRANDCRAFT on larger screens */}
                 <Link href="/" className="flex items-center gap-0.5 hover:opacity-80 transition-opacity group">
@@ -82,8 +82,8 @@ export default function Header() {
                     <Link
                         href="/community"
                         className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-medium text-sm sm:text-base transition-all duration-200 ${pathname === '/community'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-700 text-gray-200 hover:bg-gray-600 hover:scale-105'
+                            ? 'bg-ctp-blue text-ctp-base'
+                            : 'bg-ctp-surface0 text-ctp-text hover:bg-ctp-surface1 hover:scale-105'
                             }`}
                     >
                         Community
@@ -91,8 +91,8 @@ export default function Header() {
                     <Link
                         href="/create"
                         className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-medium text-sm sm:text-base transition-all duration-200 ${pathname === '/create'
-                            ? 'bg-green-600 text-white'
-                            : 'bg-green-600 text-white hover:bg-green-500 hover:scale-105'
+                            ? 'bg-ctp-green text-ctp-base'
+                            : 'bg-ctp-green text-ctp-base hover:bg-ctp-green/80 hover:scale-105'
                             }`}
                     >
                         Create
