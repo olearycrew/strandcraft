@@ -1,4 +1,4 @@
-# Strands+ Architecture Plan
+# StrandCraft Architecture Plan
 
 > A DIY Strands Puzzle Creator — Create and share custom word puzzles inspired by NYT Strands
 
@@ -293,7 +293,7 @@ interface ErrorResponse {
 
 ```
 ┌─────────────────────────────────────────┐
-│              STRANDS+                   │
+│            STRANDCRAFT                  │
 │     Create your own word puzzles        │
 │                                         │
 │  ┌───────────────┐  ┌───────────────┐   │
@@ -382,7 +382,7 @@ Multi-step wizard:
 
 ```
 ┌─────────────────────────────────────────┐
-│  STRANDS+              Beach Day        │
+│  STRANDCRAFT           Beach Day        │
 ├─────────────────────────────────────────┤
 │                                         │
 │   Theme: Hitting the sandy shores       │

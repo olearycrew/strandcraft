@@ -9,7 +9,8 @@ export async function checkDbConnection() {
     return "No DATABASE_URL environment variable";
   }
   try {
-    await pool.query("SELECT version()");
+    const ver = await pool.query("SELECT version()");
+    console.log("Database version:", ver.rows[0].version);
     return "Database connected";
   } catch (error) {
     console.error("Error connecting to the database:", error);
