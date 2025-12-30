@@ -108,28 +108,17 @@ export async function nativeShare(options: ShareOptions): Promise<boolean> {
   }
   
   const shareText = generateShareText(options);
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-  const puzzleUrl = `${baseUrl}/play/${options.puzzleSlug}`;
   
+  // Note: We only include text (which already has the URL at the end)
+  // Adding a separate 'url' property would cause the link to appear twice
   const shareData = {
     title: `DIY Strands: ${options.puzzleTitle}`,
     text: shareText,
-    url: puzzleUrl,
   };
   
   try {
     // Check if we can share this data
     if (navigator.canShare && !navigator.canShare(shareData)) {
-      // Try without URL if full share data isn't supported
-      const simpleShareData = {
-        title: shareData.title,
-        text: shareText,
-      };
-      
-      if (navigator.canShare(simpleShareData)) {
-        await navigator.share(simpleShareData);
-        return true;
-      }
       return false;
     }
     
