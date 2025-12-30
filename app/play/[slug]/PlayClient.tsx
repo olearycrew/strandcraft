@@ -176,9 +176,12 @@ export default function PlayClient({ slug }: { slug: string }) {
     useEffect(() => {
         fetchPuzzle();
         const storedWords = loadUsedHintWords(slug);
-        if (storedWords.length > 0) {
-            setHintState(prev => ({ ...prev, allTimeUsedWords: storedWords }));
-        }
+        const hintsEnabled = loadHintEnabled();
+        setHintState(prev => ({
+            ...prev,
+            allTimeUsedWords: storedWords.length > 0 ? storedWords : prev.allTimeUsedWords,
+            enabled: hintsEnabled,
+        }));
         // Load like state from localStorage
         setLiked(hasLikedPuzzle(slug));
     }, [slug]);
@@ -405,14 +408,18 @@ export default function PlayClient({ slug }: { slug: string }) {
     };
 
     const toggleHints = () => {
-        setHintState(prev => ({
-            ...prev,
-            enabled: !prev.enabled,
-            nonThemeWordsFound: [],
-            // Note: allTimeUsedWords is preserved - words already used cannot be reused
-            hintsUsed: 0,
-            currentHintPath: null,
-        }));
+        setHintState(prev => {
+            const newEnabled = !prev.enabled;
+            saveHintEnabled(newEnabled);
+            return {
+                ...prev,
+                enabled: newEnabled,
+                nonThemeWordsFound: [],
+                // Note: allTimeUsedWords is preserved - words already used cannot be reused
+                hintsUsed: 0,
+                currentHintPath: null,
+            };
+        });
     };
 
     const handleLike = async () => {
