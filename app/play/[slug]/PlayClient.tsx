@@ -327,8 +327,8 @@ export default function PlayClient({ slug }: { slug: string }) {
                                 onClick={handleLike}
                                 disabled={likeLoading}
                                 className={`px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2 ${liked
-                                        ? 'bg-pink-600 hover:bg-pink-700 text-white'
-                                        : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                                        ? 'bg-ctp-pink hover:bg-ctp-pink/80 text-ctp-base'
+                                        : 'bg-ctp-surface1 hover:bg-ctp-surface2 text-ctp-subtext1'
                                     }`}
                             >
                                 <span>{liked ? '❤️' : '🤍'}</span>
@@ -337,16 +337,16 @@ export default function PlayClient({ slug }: { slug: string }) {
                             <button
                                 onClick={toggleHints}
                                 className={`px-4 py-2 rounded-lg font-semibold transition-colors ${hintState.enabled
-                                        ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
-                                        : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                                        ? 'bg-ctp-yellow hover:bg-ctp-yellow/80 text-ctp-base'
+                                        : 'bg-ctp-surface1 hover:bg-ctp-surface2 text-ctp-subtext1'
                                     }`}
                             >
                                 {hintState.enabled ? '💡 Hints: ON' : '💡 Hints: OFF'}
                             </button>
                         </div>
                     </div>
-                    <p className="text-gray-400">by {puzzle.author}</p>
-                    <p className="text-lg text-gray-300 mt-2">Theme: {puzzle.themeClue}</p>
+                    <p className="text-ctp-subtext0">by {puzzle.author}</p>
+                    <p className="text-lg text-ctp-subtext1 mt-2">Theme: {puzzle.themeClue}</p>
                 </div>
 
                 <div className="flex flex-col md:flex-row md:gap-8 md:items-start">

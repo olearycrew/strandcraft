@@ -59,11 +59,11 @@ export default function WinModal({
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-            <div className="bg-gray-800 rounded-lg p-8 max-w-md w-full text-center">
+        <div className="fixed inset-0 bg-ctp-crust/90 flex items-center justify-center z-50 p-4">
+            <div className="bg-ctp-surface0 rounded-lg p-8 max-w-md w-full text-center">
                 <div className="text-6xl mb-4">🎉</div>
-                <h2 className="text-3xl font-bold mb-4">Puzzle Complete!</h2>
-                <p className="text-gray-300 mb-2">
+                <h2 className="text-3xl font-bold mb-4 text-ctp-text">Puzzle Complete!</h2>
+                <p className="text-ctp-subtext1 mb-2">
                     You found all {foundWords.length} words!
                 </p>
 
@@ -72,11 +72,11 @@ export default function WinModal({
                 </div>
 
                 {hintsUsed > 0 ? (
-                    <p className="text-sm text-gray-400 mb-6">
+                    <p className="text-sm text-ctp-subtext0 mb-6">
                         {hintsUsed} hint{hintsUsed === 1 ? '' : 's'} used
                     </p>
                 ) : (
-                    <p className="text-sm text-green-400 mb-6">
+                    <p className="text-sm text-ctp-green mb-6">
                         No hints!
                     </p>
                 )}
@@ -86,10 +86,10 @@ export default function WinModal({
                         onClick={handleCopyResults}
                         className={`flex-1 py-3 px-6 rounded-lg font-bold transition-all ${
                             shareStatus === 'copied'
-                                ? 'bg-green-600 text-white'
+                                ? 'bg-ctp-green text-ctp-base'
                                 : shareStatus === 'error'
-                                    ? 'bg-red-600 text-white'
-                                    : 'bg-gray-700 hover:bg-gray-600 text-white'
+                                    ? 'bg-ctp-red text-ctp-base'
+                                    : 'bg-ctp-surface1 hover:bg-ctp-surface2 text-ctp-text'
                         }`}
                     >
                         {shareStatus === 'copied' ? '✓ Copied!' : shareStatus === 'error' ? 'Failed to copy' : 'Copy Results'}
@@ -100,8 +100,8 @@ export default function WinModal({
                             onClick={handleNativeShare}
                             className={`flex-1 py-3 px-6 rounded-lg font-bold transition-all ${
                                 shareStatus === 'shared'
-                                    ? 'bg-green-600 text-white'
-                                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                    ? 'bg-ctp-green text-ctp-base'
+                                    : 'bg-ctp-blue hover:bg-ctp-blue/80 text-ctp-base'
                             }`}
                         >
                             {shareStatus === 'shared' ? '✓ Shared!' : 'Share'}
@@ -111,7 +111,7 @@ export default function WinModal({
 
                 <Link
                     href="/"
-                    className="inline-block text-blue-400 hover:text-blue-300 transition-colors"
+                    className="inline-block text-ctp-blue hover:text-ctp-sky transition-colors"
                 >
                     ← Back to Home
                 </Link>

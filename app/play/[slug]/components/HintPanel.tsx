@@ -22,13 +22,12 @@ export default function HintPanel({
     if (!enabled) return null;
 
     return (
-        <div className="bg-gray-800 rounded-lg p-4">
-            <h2 className="text-xl font-bold mb-2">Hint System</h2>
-            <p className="text-sm text-gray-400 mb-4">
+        <div className="bg-ctp-surface0 rounded-lg p-4">
+            <h2 className="text-xl font-bold mb-2 text-ctp-text">Hint System</h2>
+            <p className="text-sm text-ctp-subtext0 mb-4">
                 Find 3 non-theme words to unlock a hint
             </p>
 
-            {/* Combined progress + button */}
             <ProgressButton
                 progress={progress}
                 onClick={onUseHint}
@@ -36,13 +35,13 @@ export default function HintPanel({
             />
 
             {hasActiveHint && (
-                <p className="text-sm text-yellow-400 mt-3">
+                <p className="text-sm text-ctp-yellow mt-3">
                     A word is highlighted on the grid!
                 </p>
             )}
 
             {hintsUsed > 0 && (
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-ctp-overlay0 mt-2">
                     Hints used: {hintsUsed}
                 </p>
             )}

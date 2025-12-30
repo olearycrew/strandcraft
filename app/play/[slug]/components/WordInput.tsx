@@ -11,17 +11,17 @@ export default function WordInput({ currentWord, onSubmit, onClear }: WordInputP
 
     return (
         <div className="flex justify-center">
-            <div className="bg-gray-800 rounded-lg p-4 flex items-center gap-4">
-                <div className="text-2xl font-bold">{currentWord}</div>
+            <div className="bg-ctp-surface0 rounded-lg p-4 flex items-center gap-4">
+                <div className="text-2xl font-bold text-ctp-text">{currentWord}</div>
                 <button
                     onClick={onSubmit}
-                    className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition-colors"
+                    className="bg-ctp-green hover:bg-ctp-green/80 text-ctp-base font-bold py-2 px-6 rounded-lg transition-colors"
                 >
                     Submit
                 </button>
                 <button
                     onClick={onClear}
-                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+                    className="bg-ctp-red hover:bg-ctp-red/80 text-ctp-base font-bold py-2 px-4 rounded-lg transition-colors"
                 >
                     Clear
                 </button>

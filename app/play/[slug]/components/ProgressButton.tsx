@@ -13,8 +13,7 @@ export default function ProgressButton({
 }: ProgressButtonProps) {
     const fillPercentage = (progress / 3) * 100;
     const isReady = progress >= 3;
-    
-    // Dynamic button text based on progress
+
     const getButtonText = () => {
         if (isActive) return 'Hint Active';
         if (progress === 0) return 'Find 3 words...';
@@ -28,31 +27,27 @@ export default function ProgressButton({
             onClick={onClick}
             disabled={!isReady || isActive}
             className={`
-                relative w-full py-3 px-4 rounded-lg font-semibold 
-                overflow-hidden transition-all duration-300
+                relative w-full py-3 px-4 rounded-lg font-semibold
+                overflow-hidden transition-all duration-300 bg-ctp-surface1
                 ${isReady && !isActive
-                    ? 'cursor-pointer hover:brightness-110' 
+                    ? 'cursor-pointer hover:brightness-110'
                     : 'cursor-not-allowed'
                 }
             `}
-            style={{
-                backgroundColor: '#374151', // gray-700 base
-            }}
         >
             {/* Progress fill layer */}
             <div
-                className="absolute inset-0 transition-all duration-500 ease-out"
-                style={{
-                    width: `${fillPercentage}%`,
-                    backgroundColor: isReady ? '#ca8a04' : '#a16207', // yellow-600 when ready, yellow-700 when filling
-                }}
+                className={`absolute inset-0 transition-all duration-500 ease-out ${
+                    isReady ? 'bg-ctp-yellow' : 'bg-ctp-yellow/70'
+                }`}
+                style={{ width: `${fillPercentage}%` }}
             />
-            
+
             {/* Text layer (above fill) */}
-            <span 
+            <span
                 className={`
                     relative z-10 transition-colors duration-300
-                    ${isReady ? 'text-white' : 'text-gray-400'}
+                    ${isReady ? 'text-ctp-base' : 'text-ctp-subtext0'}
                 `}
             >
                 {getButtonText()}

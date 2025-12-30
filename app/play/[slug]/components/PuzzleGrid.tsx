@@ -18,15 +18,15 @@ function getCellClassName(state: CellState): string {
 
     switch (state) {
         case 'selected':
-            return `${base} bg-blue-500 text-white scale-105`;
+            return `${base} bg-ctp-blue text-ctp-base scale-105`;
         case 'hint':
-            return `${base} bg-gray-700 text-white border-2 border-dashed border-yellow-400`;
+            return `${base} bg-ctp-surface1 text-ctp-text border-2 border-dashed border-ctp-yellow`;
         case 'found-spangram':
-            return `${base} bg-yellow-600 text-white`;
+            return `${base} bg-ctp-yellow text-ctp-base`;
         case 'found-theme':
-            return `${base} bg-blue-700 text-white`;
+            return `${base} bg-ctp-blue text-ctp-base`;
         default:
-            return `${base} bg-gray-700 hover:bg-gray-600 text-white`;
+            return `${base} bg-ctp-surface1 hover:bg-ctp-surface2 text-ctp-text`;
     }
 }
 
@@ -72,11 +72,15 @@ export default function PuzzleGrid({
     const gap = 4;
     const padding = 16;
 
+    // Catppuccin Mocha colors for SVG (using sapphire and peach for better visibility)
+    const BLUE = '#74c7ec';   // sapphire - more vibrant than blue
+    const YELLOW = '#fab387'; // peach - more visible than yellow
+
     return (
         <div className="mb-8 flex justify-center">
             <div className="relative inline-block">
                 <div
-                    className="inline-grid gap-1 bg-gray-800 p-4 rounded-lg"
+                    className="inline-grid gap-1 bg-ctp-surface0 p-4 rounded-lg"
                     style={{ gridTemplateColumns: `repeat(${GRID_COLS}, minmax(0, 1fr))` }}
                 >
                     {Array.from({ length: GRID_ROWS * GRID_COLS }).map((_, index) => {
@@ -102,7 +106,7 @@ export default function PuzzleGrid({
                 >
                     {foundWords.map((found, wordIndex) => {
                         const elements = [];
-                        const color = found.type === 'spangram' ? '#fbbf24' : '#93c5fd';
+                        const color = found.type === 'spangram' ? YELLOW : BLUE;
 
                         for (let i = 0; i < found.path.length - 1; i++) {
                             const from = found.path[i];
