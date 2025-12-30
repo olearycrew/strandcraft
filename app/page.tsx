@@ -1,5 +1,6 @@
 // app/page.tsx
 import Link from 'next/link';
+import Footer from './components/Footer';
 
 export default function Home() {
   return (
@@ -72,9 +73,7 @@ export default function Home() {
         </div>
 
         {/* Footer */}
-        <div className="text-sm text-gray-500">
-          <p>Inspired by (but not affiliated with) NYT Strands • Made with 🖤💛 in Maryland</p>
-        </div>
+        <Footer />
       </div>
     </main>
   );

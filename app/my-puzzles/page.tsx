@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getMyPuzzles, removeMyPuzzle, type MyPuzzle } from '@/lib/utils/my-puzzles';
+import Footer from '@/app/components/Footer';
 
 export default function MyPuzzlesPage() {
     const [puzzles, setPuzzles] = useState<MyPuzzle[]>([]);
@@ -118,6 +119,9 @@ export default function MyPuzzlesPage() {
                         ))}
                     </div>
                 )}
+
+                {/* Footer */}
+                <Footer />
             </div>
         </main>
     );

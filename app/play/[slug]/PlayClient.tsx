@@ -6,6 +6,7 @@ import type { PuzzlePublic, Coordinate } from '@/types/puzzle';
 import { coordToIndex, getLetterAt, GRID_ROWS, GRID_COLS } from '@/lib/utils/grid';
 import { isValidEnglishWord } from '@/lib/utils/dictionary';
 import { generateShareText, generateWordOrderEmojis, copyToClipboard, nativeShare, canUseNativeShare } from '@/lib/utils/share';
+import Footer from '@/app/components/Footer';
 
 interface FoundWord {
     word: string;
@@ -701,6 +702,9 @@ export default function PlayClient({ slug }: { slug: string }) {
                         </div>
                     </div>
                 )}
+
+                {/* Footer */}
+                <Footer />
             </div>
         </main>
     );
