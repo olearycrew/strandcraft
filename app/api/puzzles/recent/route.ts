@@ -4,10 +4,13 @@ import { db } from "@/lib/db";
 import { puzzles } from "@/lib/db/schema";
 import { desc } from "drizzle-orm";
 
+// Force dynamic rendering - never cache this route
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
-    // Fetch the 20 most recently created puzzles
-    const recentPuzzles = await db
+    // Fetch all puzzles ordered by creation date (most recent first)
+    const allPuzzles = await db
       .select({
         id: puzzles.id,
         slug: puzzles.slug,
@@ -17,19 +20,18 @@ export async function GET() {
         createdAt: puzzles.createdAt,
       })
       .from(puzzles)
-      .orderBy(desc(puzzles.createdAt))
-      .limit(20);
+      .orderBy(desc(puzzles.createdAt));
 
     return NextResponse.json({
       success: true,
-      puzzles: recentPuzzles,
+      puzzles: allPuzzles,
     });
   } catch (error) {
-    console.error("Error fetching recent puzzles:", error);
+    console.error("Error fetching puzzles:", error);
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to fetch recent puzzles",
+        error: "Failed to fetch puzzles",
       },
       { status: 500 }
     );
