@@ -36,10 +36,12 @@ function LetterTile({ letter, color, index }: { letter: string; color: string; i
 
 function EmojiTile({ emoji, color }: { emoji: string; color: string }) {
   return (
-    <div
-      className={`${color} w-14 h-14 rounded-lg flex items-center justify-center text-3xl shadow-lg border-2 border-ctp-crust/20`}
-    >
-      {emoji}
+    <div className="flex justify-center">
+      <div
+        className={`${color} w-14 h-14 rounded-lg flex items-center justify-center text-3xl shadow-lg border-2 border-ctp-crust/20`}
+      >
+        {emoji}
+      </div>
     </div>
   );
 }
@@ -126,7 +128,7 @@ export default function Home() {
             className="group bg-ctp-surface0 hover:bg-ctp-surface1 rounded-2xl p-8 transition-all duration-200 hover:scale-105 border-2 border-ctp-surface1 hover:border-ctp-green"
           >
             <div className="space-y-4">
-              <EmojiTile emoji="▶" color="bg-ctp-green" />
+              <EmojiTile emoji="▶" color="bg-[#40a02b]" />
               <h2 className="text-2xl font-bold">HOW TO PLAY</h2>
               <p className="text-ctp-subtext0">
                 Learn the rules and start solving puzzles
