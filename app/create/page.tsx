@@ -12,6 +12,7 @@ import WordsStep from './components/WordsStep';
 import LayoutModeStep from './components/LayoutModeStep';
 import GridStep from './components/GridStep';
 import PublishSuccessStep from './components/PublishSuccessStep';
+import Footer from '@/app/components/Footer';
 
 type Step = 'metadata' | 'words' | 'layout-mode' | 'grid' | 'publish';
 type LayoutMode = 'auto' | 'manual';
@@ -374,6 +375,9 @@ export default function CreatePage() {
                         slug={publishedSlug}
                     />
                 )}
+
+                {/* Footer */}
+                <Footer />
             </div>
         </main>
     );

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { db } from '@/lib/db';
 import { puzzles } from '@/lib/db/schema';
 import { desc } from 'drizzle-orm';
+import Footer from '@/app/components/Footer';
 
 interface RecentPuzzle {
     id: number;
@@ -129,6 +130,9 @@ export default async function CommunityPage() {
                         </Link>
                     </div>
                 )}
+
+                {/* Footer */}
+                <Footer />
             </div>
         </main>
     );

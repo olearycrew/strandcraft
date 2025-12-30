@@ -1,5 +1,6 @@
 // app/how-to-play/page.tsx
 import Link from 'next/link';
+import Footer from '@/app/components/Footer';
 
 export default function HowToPlay() {
     return (
@@ -92,6 +93,9 @@ export default function HowToPlay() {
                         Back to Home
                     </Link>
                 </div>
+
+                {/* Footer */}
+                <Footer />
             </div>
         </main>
     );
