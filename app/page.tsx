@@ -36,7 +36,7 @@ function LetterTile({ letter, color, index }: { letter: string; color: string; i
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-ctp-base text-ctp-text flex flex-col items-center justify-center p-4">
+    <main className="min-h-screen bg-ctp-base text-ctp-text flex flex-col items-center justify-center p-4 pt-12 sm:pt-4">
       <div className="max-w-4xl w-full text-center space-y-12">
         {/* Hero Section with Tile Header */}
         <div className="space-y-6">
