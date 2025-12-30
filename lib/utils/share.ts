@@ -143,6 +143,14 @@ export function getPuzzleUrl(puzzleSlug: string): string {
 }
 
 /**
+ * Generate the share message text for a puzzle
+ */
+export function generatePuzzleShareText(puzzleTitle: string, puzzleSlug: string): string {
+  const puzzleUrl = getPuzzleUrl(puzzleSlug);
+  return `Try this word puzzle on StrandCraft: ${puzzleTitle} ${puzzleUrl}`;
+}
+
+/**
  * Share a puzzle link using the native share sheet
  * Returns true if share was initiated, false if not available
  */
@@ -151,12 +159,11 @@ export async function sharePuzzleLink(puzzleTitle: string, puzzleSlug: string): 
     return false;
   }
   
-  const puzzleUrl = getPuzzleUrl(puzzleSlug);
+  const shareText = generatePuzzleShareText(puzzleTitle, puzzleSlug);
   
   const shareData = {
-    title: `Play "${puzzleTitle}" on Strandcraft`,
-    text: `Check out this puzzle: "${puzzleTitle}"`,
-    url: puzzleUrl,
+    title: `StrandCraft: ${puzzleTitle}`,
+    text: shareText,
   };
   
   try {
