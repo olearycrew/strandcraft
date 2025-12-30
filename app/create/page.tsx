@@ -30,10 +30,11 @@ export default function CreatePage() {
     const [layoutMode, setLayoutMode] = useState<LayoutMode>('auto');
 
     // Grid state
-    const [gridLetters, setGridLetters] = useState('');
+    const [gridLetters, setGridLetters] = useState(' '.repeat(48));
     const [spangramPath, setSpangramPath] = useState<Coordinate[]>([]);
     const [themeWordPaths, setThemeWordPaths] = useState<Coordinate[][]>([]);
     const [publishedSlug, setPublishedSlug] = useState<string | null>(null);
+    const [linkCopied, setLinkCopied] = useState(false);
 
     // Manual layout state
     const [currentWordIndex, setCurrentWordIndex] = useState<number>(0);
@@ -60,7 +61,7 @@ export default function CreatePage() {
     };
     const handleThemeWordChange = (index: number, value: string) => {
         const newWords = [...themeWords];
-        newWords[index] = value.toUpperCase();
+        newWords[index] = value.replace(/\s/g, '').toUpperCase();
         setThemeWords(newWords);
     };
 
@@ -174,15 +175,15 @@ export default function CreatePage() {
                 return;
             }
 
-            setSpangramPath(currentPath);
-            const newGrid = gridLetters ? gridLetters.split('') : new Array(48).fill(' ');
+            setSpangramPath([...currentPath]);
+            const newGrid = gridLetters.split('');
             currentPath.forEach((coord, i) => {
                 newGrid[coordToIndex(coord)] = spangramWord[i];
             });
             setGridLetters(newGrid.join(''));
         } else {
             const newPaths = [...themeWordPaths];
-            newPaths[currentWordIndex - 1] = currentPath;
+            newPaths[currentWordIndex - 1] = [...currentPath];
             setThemeWordPaths(newPaths);
 
             const newGrid = gridLetters.split('');
@@ -207,7 +208,7 @@ export default function CreatePage() {
         if (wordIndex === 0) {
             const newGrid = gridLetters.split('');
             spangramPath.forEach(coord => {
-                newGrid[coordToIndex(coord)] = '';
+                newGrid[coordToIndex(coord)] = ' ';
             });
             setGridLetters(newGrid.join(''));
             setSpangramPath([]);
@@ -216,7 +217,7 @@ export default function CreatePage() {
             const pathToClear = themeWordPaths[wordIndex - 1];
             if (pathToClear) {
                 pathToClear.forEach(coord => {
-                    newGrid[coordToIndex(coord)] = '';
+                    newGrid[coordToIndex(coord)] = ' ';
                 });
                 setGridLetters(newGrid.join(''));
             }
@@ -224,6 +225,18 @@ export default function CreatePage() {
             newPaths[wordIndex - 1] = [];
             setThemeWordPaths(newPaths);
         }
+    };
+
+    const clearAll = () => {
+        // Reset grid to all spaces
+        setGridLetters(' '.repeat(48));
+        // Clear all paths
+        setSpangramPath([]);
+        setThemeWordPaths([]);
+        // Cancel any active drawing
+        setIsDrawing(false);
+        setCurrentPath([]);
+        setError(null);
     };
 
     const handlePublish = async () => {
@@ -274,6 +287,12 @@ export default function CreatePage() {
 
             setPublishedSlug(data.slug);
             setStep('publish');
+            addMyPuzzle({
+                slug: data.slug,
+                title,
+                author,
+                createdAt: new Date().toISOString(),
+            });
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -285,7 +304,8 @@ export default function CreatePage() {
         if (publishedSlug) {
             const url = `${window.location.origin}/play/${publishedSlug}`;
             navigator.clipboard.writeText(url);
-            alert('Link copied to clipboard!');
+            setLinkCopied(true);
+            setTimeout(() => setLinkCopied(false), 2000);
         }
     };
 
@@ -544,6 +564,7 @@ export default function CreatePage() {
                                     onFinishDrawing={finishDrawingWord}
                                     onCancelDrawing={cancelDrawing}
                                     onClearWord={clearWord}
+                                    onClearAll={clearAll}
                                 />
                             </>
                         )}
@@ -552,7 +573,7 @@ export default function CreatePage() {
                             <div className="bg-gray-800 p-4 rounded-lg">
                                 <h3 className="font-bold mb-3">Grid Preview</h3>
                                 <GridRenderer
-                                    gridLetters={gridLetters || ' '.repeat(48)}
+                                    gridLetters={gridLetters}
                                     spangramPath={spangramPath}
                                     themeWordPaths={themeWordPaths}
                                     currentPath={currentPath}
@@ -593,9 +614,12 @@ export default function CreatePage() {
                         <div className="space-y-4 max-w-md mx-auto">
                             <button
                                 onClick={copyLink}
-                                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+                                className={`w-full font-bold py-3 px-6 rounded-lg transition-all duration-300 ${linkCopied
+                                    ? 'bg-green-600 scale-105'
+                                    : 'bg-blue-600 hover:bg-blue-700'
+                                    } text-white`}
                             >
-                                📋 Copy Link
+                                {linkCopied ? '✓ Link Copied!' : '📋 Copy Link'}
                             </button>
 
                             <Link

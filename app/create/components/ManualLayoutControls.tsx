@@ -14,6 +14,7 @@ interface ManualLayoutControlsProps {
     onFinishDrawing: () => void;
     onCancelDrawing: () => void;
     onClearWord: (wordIndex: number) => void;
+    onClearAll: () => void;
 }
 
 const getWordColor = (wordIndex: number): string => {
@@ -43,12 +44,24 @@ export default function ManualLayoutControls({
     onFinishDrawing,
     onCancelDrawing,
     onClearWord,
+    onClearAll,
 }: ManualLayoutControlsProps) {
     const validThemeWords = themeWords.filter(w => w.trim());
+    const hasAnyWords = spangramPath.length > 0 || themeWordPaths.some(path => path && path.length > 0);
 
     return (
         <div className="bg-gray-800 p-4 rounded-lg">
-            <h3 className="font-bold mb-3">Draw Word Paths</h3>
+            <div className="flex items-center justify-between mb-3">
+                <h3 className="font-bold">Draw Word Paths</h3>
+                {hasAnyWords && !isDrawing && (
+                    <button
+                        onClick={onClearAll}
+                        className="bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-1 rounded"
+                    >
+                        Clear All
+                    </button>
+                )}
+            </div>
             <div className="space-y-2">
                 {/* Spangram */}
                 <div className="flex items-center gap-3">
