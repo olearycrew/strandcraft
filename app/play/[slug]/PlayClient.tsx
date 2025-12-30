@@ -563,8 +563,8 @@ export default function PlayClient({ slug }: { slug: string }) {
                                 onClick={handleLike}
                                 disabled={likeLoading}
                                 className={`px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2 ${liked
-                                        ? 'bg-pink-600 hover:bg-pink-700 text-white'
-                                        : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                                    ? 'bg-pink-600 hover:bg-pink-700 text-white'
+                                    : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
                                     }`}
                             >
                                 <span>{liked ? '❤️' : '🤍'}</span>
@@ -701,7 +701,7 @@ export default function PlayClient({ slug }: { slug: string }) {
 
                         {/* Feedback Message */}
                         {feedback && (
-                            <div className={`mt-4 p-3 rounded-lg text-center ${feedback.type === 'success' ? 'bg-green-600' : 'bg-red-600'
+                            <div className={`mt-4 p-3 rounded-lg text-center text-ctp-base font-medium ${feedback.type === 'success' ? 'bg-ctp-green' : 'bg-ctp-red'
                                 }`}>
                                 {feedback.message}
                             </div>
