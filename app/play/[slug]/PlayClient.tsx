@@ -27,6 +27,66 @@ interface HintState {
 const getHintStorageKey = (puzzleSlug: string) => `diystrands-hints-${puzzleSlug}`;
 const getHintEnabledKey = () => `diystrands-hints-enabled`;
 
+// LocalStorage helpers for tracking likes and plays
+const getLikeStorageKey = (puzzleSlug: string) => `diystrands-liked-${puzzleSlug}`;
+const getPlayedStorageKey = (puzzleSlug: string) => `diystrands-played-${puzzleSlug}`;
+const getCompletedStorageKey = (puzzleSlug: string) => `diystrands-completed-${puzzleSlug}`;
+
+const hasLikedPuzzle = (puzzleSlug: string): boolean => {
+    if (typeof window === 'undefined') return false;
+    try {
+        return localStorage.getItem(getLikeStorageKey(puzzleSlug)) === 'true';
+    } catch {
+        return false;
+    }
+};
+
+const setLikedPuzzle = (puzzleSlug: string, liked: boolean): void => {
+    try {
+        if (liked) {
+            localStorage.setItem(getLikeStorageKey(puzzleSlug), 'true');
+        } else {
+            localStorage.removeItem(getLikeStorageKey(puzzleSlug));
+        }
+    } catch {
+        // Ignore storage errors
+    }
+};
+
+const hasPlayedPuzzle = (puzzleSlug: string): boolean => {
+    if (typeof window === 'undefined') return false;
+    try {
+        return localStorage.getItem(getPlayedStorageKey(puzzleSlug)) === 'true';
+    } catch {
+        return false;
+    }
+};
+
+const setPlayedPuzzle = (puzzleSlug: string): void => {
+    try {
+        localStorage.setItem(getPlayedStorageKey(puzzleSlug), 'true');
+    } catch {
+        // Ignore storage errors
+    }
+};
+
+const hasCompletedPuzzle = (puzzleSlug: string): boolean => {
+    if (typeof window === 'undefined') return false;
+    try {
+        return localStorage.getItem(getCompletedStorageKey(puzzleSlug)) === 'true';
+    } catch {
+        return false;
+    }
+};
+
+const setCompletedPuzzle = (puzzleSlug: string): void => {
+    try {
+        localStorage.setItem(getCompletedStorageKey(puzzleSlug), 'true');
+    } catch {
+        // Ignore storage errors
+    }
+};
+
 const loadUsedHintWords = (puzzleSlug: string): string[] => {
     if (typeof window === 'undefined') return [];
     try {
@@ -87,6 +147,11 @@ export default function PlayClient({ slug }: { slug: string }) {
     const [shareStatus, setShareStatus] = useState<'idle' | 'copied' | 'shared' | 'error'>('idle');
     const [showNativeShare, setShowNativeShare] = useState(false);
 
+    // Like state
+    const [liked, setLiked] = useState(false);
+    const [likeCount, setLikeCount] = useState(0);
+    const [likeLoading, setLikeLoading] = useState(false);
+
     // Hint system state
     const [hintState, setHintState] = useState<HintState>({
         enabled: false,
@@ -114,7 +179,27 @@ export default function PlayClient({ slug }: { slug: string }) {
         if (storedWords.length > 0) {
             setHintState(prev => ({ ...prev, allTimeUsedWords: storedWords }));
         }
+        // Load like state from localStorage
+        setLiked(hasLikedPuzzle(slug));
     }, [slug]);
+
+    // Track play when puzzle is loaded (only once per puzzle per browser)
+    useEffect(() => {
+        if (puzzle && !hasPlayedPuzzle(slug)) {
+            // Track that this puzzle has been played
+            setPlayedPuzzle(slug);
+            // Increment play count on server
+            fetch(`/api/puzzles/${slug}/stats`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'play' }),
+            }).catch(console.error);
+        }
+        // Update local like count from puzzle data
+        if (puzzle) {
+            setLikeCount(puzzle.likeCount);
+        }
+    }, [puzzle, slug]);
 
     // Check for native share support
     useEffect(() => {
@@ -265,6 +350,16 @@ export default function PlayClient({ slug }: { slug: string }) {
         const totalWords = 1 + puzzle.themeWords.length; // spangram + theme words
         if (words.length === totalWords) {
             setGameWon(true);
+            // Track completion if not already completed
+            if (!hasCompletedPuzzle(slug)) {
+                setCompletedPuzzle(slug);
+                // Increment completion count on server
+                fetch(`/api/puzzles/${slug}/stats`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'complete' }),
+                }).catch(console.error);
+            }
         }
     };
 
@@ -318,6 +413,32 @@ export default function PlayClient({ slug }: { slug: string }) {
             hintsUsed: 0,
             currentHintPath: null,
         }));
+    };
+
+    const handleLike = async () => {
+        if (likeLoading) return;
+
+        setLikeLoading(true);
+        const newLikedState = !liked;
+
+        try {
+            const response = await fetch(`/api/puzzles/${slug}/like`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: newLikedState ? 'like' : 'unlike' }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setLiked(newLikedState);
+                setLikeCount(data.likeCount);
+                setLikedPuzzle(slug, newLikedState);
+            }
+        } catch (error) {
+            console.error('Error updating like:', error);
+        } finally {
+            setLikeLoading(false);
+        }
     };
 
     const useHint = () => {
@@ -430,15 +551,28 @@ export default function PlayClient({ slug }: { slug: string }) {
                         <Link href="/" className="inline-flex items-center text-blue-400 hover:text-blue-300">
                             ← Back to Home
                         </Link>
-                        <button
-                            onClick={toggleHints}
-                            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${hintState.enabled
-                                ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
-                                : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
-                                }`}
-                        >
-                            {hintState.enabled ? '💡 Hints: ON' : '💡 Hints: OFF'}
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={handleLike}
+                                disabled={likeLoading}
+                                className={`px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2 ${liked
+                                        ? 'bg-pink-600 hover:bg-pink-700 text-white'
+                                        : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                                    }`}
+                            >
+                                <span>{liked ? '❤️' : '🤍'}</span>
+                                <span>{likeCount}</span>
+                            </button>
+                            <button
+                                onClick={toggleHints}
+                                className={`px-4 py-2 rounded-lg font-semibold transition-colors ${hintState.enabled
+                                    ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                                    : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                                    }`}
+                            >
+                                {hintState.enabled ? '💡 Hints: ON' : '💡 Hints: OFF'}
+                            </button>
+                        </div>
                     </div>
                     <h1 className="text-3xl font-bold">{puzzle.title}</h1>
                     <p className="text-gray-400">by {puzzle.author}</p>
@@ -649,12 +783,12 @@ export default function PlayClient({ slug }: { slug: string }) {
                             <p className="text-gray-300 mb-2">
                                 You found all {foundWords.length} words!
                             </p>
-                            
+
                             {/* Word Order Visualization */}
                             <div className="text-2xl mb-4 tracking-wider">
                                 {generateWordOrderEmojis(foundWords.map(fw => ({ word: fw.word, type: fw.type })))}
                             </div>
-                            
+
                             {hintState.hintsUsed > 0 ? (
                                 <p className="text-sm text-gray-400 mb-6">
                                     {hintState.hintsUsed} hint{hintState.hintsUsed === 1 ? '' : 's'} used
@@ -664,36 +798,34 @@ export default function PlayClient({ slug }: { slug: string }) {
                                     No hints! 🌟
                                 </p>
                             )}
-                            
+
                             {/* Share Buttons */}
                             <div className="flex flex-col sm:flex-row gap-3 mb-6">
                                 <button
                                     onClick={handleCopyResults}
-                                    className={`flex-1 py-3 px-6 rounded-lg font-bold transition-all ${
-                                        shareStatus === 'copied'
-                                            ? 'bg-green-600 text-white'
-                                            : shareStatus === 'error'
+                                    className={`flex-1 py-3 px-6 rounded-lg font-bold transition-all ${shareStatus === 'copied'
+                                        ? 'bg-green-600 text-white'
+                                        : shareStatus === 'error'
                                             ? 'bg-red-600 text-white'
                                             : 'bg-gray-700 hover:bg-gray-600 text-white'
-                                    }`}
+                                        }`}
                                 >
                                     {shareStatus === 'copied' ? '✓ Copied!' : shareStatus === 'error' ? 'Failed to copy' : '📋 Copy Results'}
                                 </button>
-                                
+
                                 {showNativeShare && (
                                     <button
                                         onClick={handleNativeShare}
-                                        className={`flex-1 py-3 px-6 rounded-lg font-bold transition-all ${
-                                            shareStatus === 'shared'
-                                                ? 'bg-green-600 text-white'
-                                                : 'bg-blue-600 hover:bg-blue-700 text-white'
-                                        }`}
+                                        className={`flex-1 py-3 px-6 rounded-lg font-bold transition-all ${shareStatus === 'shared'
+                                            ? 'bg-green-600 text-white'
+                                            : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                            }`}
                                     >
                                         {shareStatus === 'shared' ? '✓ Shared!' : '📤 Share'}
                                     </button>
                                 )}
                             </div>
-                            
+
                             <Link
                                 href="/"
                                 className="inline-block text-blue-400 hover:text-blue-300 transition-colors"

@@ -7,6 +7,7 @@ import {
   jsonb,
   timestamp,
   index,
+  integer,
 } from "drizzle-orm/pg-core";
 import type { Coordinate, ThemeWord } from "@/types/puzzle";
 
@@ -23,10 +24,18 @@ export const puzzles = pgTable(
     spangramPath: jsonb("spangram_path").$type<Coordinate[]>().notNull(),
     themeWords: jsonb("theme_words").$type<ThemeWord[]>().notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
+    // Stats tracking
+    playCount: integer("play_count").default(0).notNull(),
+    completionCount: integer("completion_count").default(0).notNull(),
+    likeCount: integer("like_count").default(0).notNull(),
   },
   (table) => ({
     slugIdx: index("idx_puzzles_slug").on(table.slug),
     createdAtIdx: index("idx_puzzles_created_at").on(table.createdAt),
+    likeCountIdx: index("idx_puzzles_like_count").on(table.likeCount),
+    completionCountIdx: index("idx_puzzles_completion_count").on(
+      table.completionCount
+    ),
   })
 );
 

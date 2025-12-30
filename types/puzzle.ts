@@ -21,6 +21,10 @@ export interface Puzzle {
   spangramPath: Coordinate[];
   themeWords: ThemeWord[];
   createdAt: Date;
+  // Stats tracking
+  playCount: number;
+  completionCount: number;
+  likeCount: number;
 }
 
 // For API responses (without internal id)
@@ -33,6 +37,10 @@ export interface PuzzlePublic {
   spangramWord: string;
   spangramPath: Coordinate[];
   themeWords: ThemeWord[];
+  // Stats (read-only for clients)
+  playCount: number;
+  completionCount: number;
+  likeCount: number;
 }
 
 // For puzzle creation

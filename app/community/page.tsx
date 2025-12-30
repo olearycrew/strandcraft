@@ -5,8 +5,10 @@ import Link from 'next/link';
 export const dynamic = 'force-dynamic';
 import { db } from '@/lib/db';
 import { puzzles } from '@/lib/db/schema';
-import { desc } from 'drizzle-orm';
+import { desc, asc } from 'drizzle-orm';
 import Footer from '@/app/components/Footer';
+
+type SortOption = 'newest' | 'oldest' | 'mostLiked' | 'mostPlayed' | 'mostCompleted';
 
 interface RecentPuzzle {
     id: number;
@@ -15,10 +17,33 @@ interface RecentPuzzle {
     author: string;
     themeClue: string;
     createdAt: Date;
+    playCount: number;
+    completionCount: number;
+    likeCount: number;
 }
 
-async function getRecentPuzzles(): Promise<RecentPuzzle[]> {
+async function getPuzzles(sortBy: SortOption): Promise<RecentPuzzle[]> {
     try {
+        let orderByClause;
+        switch (sortBy) {
+            case 'oldest':
+                orderByClause = asc(puzzles.createdAt);
+                break;
+            case 'mostLiked':
+                orderByClause = desc(puzzles.likeCount);
+                break;
+            case 'mostPlayed':
+                orderByClause = desc(puzzles.playCount);
+                break;
+            case 'mostCompleted':
+                orderByClause = desc(puzzles.completionCount);
+                break;
+            case 'newest':
+            default:
+                orderByClause = desc(puzzles.createdAt);
+                break;
+        }
+
         const recentPuzzles = await db
             .select({
                 id: puzzles.id,
@@ -27,14 +52,17 @@ async function getRecentPuzzles(): Promise<RecentPuzzle[]> {
                 author: puzzles.author,
                 themeClue: puzzles.themeClue,
                 createdAt: puzzles.createdAt,
+                playCount: puzzles.playCount,
+                completionCount: puzzles.completionCount,
+                likeCount: puzzles.likeCount,
             })
             .from(puzzles)
-            .orderBy(desc(puzzles.createdAt))
-            .limit(20);
+            .orderBy(orderByClause)
+            .limit(50);
 
         return recentPuzzles;
     } catch (error) {
-        console.error('Error fetching recent puzzles:', error);
+        console.error('Error fetching puzzles:', error);
         return [];
     }
 }
@@ -50,8 +78,29 @@ function formatTimeAgo(date: Date): string {
     return new Date(date).toLocaleDateString();
 }
 
-export default async function CommunityPage() {
-    const puzzles = await getRecentPuzzles();
+function formatNumber(num: number): string {
+    if (num >= 1000) {
+        return (num / 1000).toFixed(1) + 'k';
+    }
+    return num.toString();
+}
+
+interface PageProps {
+    searchParams: Promise<{ sort?: string }>;
+}
+
+export default async function CommunityPage({ searchParams }: PageProps) {
+    const params = await searchParams;
+    const sortBy = (params.sort as SortOption) || 'newest';
+    const puzzleList = await getPuzzles(sortBy);
+
+    const sortOptions: { value: SortOption; label: string }[] = [
+        { value: 'newest', label: '🕐 Newest' },
+        { value: 'oldest', label: '📜 Oldest' },
+        { value: 'mostLiked', label: '❤️ Most Liked' },
+        { value: 'mostPlayed', label: '🎮 Most Played' },
+        { value: 'mostCompleted', label: '✅ Most Completed' },
+    ];
 
     return (
         <main className="min-h-screen bg-gray-900 text-white">
@@ -71,8 +120,26 @@ export default async function CommunityPage() {
                     </p>
                 </div>
 
+                {/* Sort Options */}
+                <div className="mb-6">
+                    <div className="flex flex-wrap gap-2">
+                        {sortOptions.map((option) => (
+                            <Link
+                                key={option.value}
+                                href={`/community?sort=${option.value}`}
+                                className={`px-4 py-2 rounded-lg font-semibold transition-colors ${sortBy === option.value
+                                        ? 'bg-blue-600 text-white'
+                                        : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                                    }`}
+                            >
+                                {option.label}
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+
                 {/* Puzzles Grid */}
-                {puzzles.length === 0 ? (
+                {puzzleList.length === 0 ? (
                     <div className="text-center py-16">
                         <div className="text-6xl mb-4">🧩</div>
                         <h2 className="text-2xl font-bold mb-2">No puzzles yet</h2>
@@ -88,7 +155,7 @@ export default async function CommunityPage() {
                     </div>
                 ) : (
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        {puzzles.map((puzzle) => (
+                        {puzzleList.map((puzzle) => (
                             <Link
                                 key={puzzle.id}
                                 href={`/play/${puzzle.slug}`}
@@ -104,6 +171,22 @@ export default async function CommunityPage() {
                                     <p className="text-gray-400 text-sm line-clamp-2">
                                         {puzzle.themeClue}
                                     </p>
+
+                                    {/* Stats Row */}
+                                    <div className="flex items-center gap-4 text-sm text-gray-400">
+                                        <span className="flex items-center gap-1" title="Likes">
+                                            <span>❤️</span>
+                                            <span>{formatNumber(puzzle.likeCount)}</span>
+                                        </span>
+                                        <span className="flex items-center gap-1" title="Plays">
+                                            <span>🎮</span>
+                                            <span>{formatNumber(puzzle.playCount)}</span>
+                                        </span>
+                                        <span className="flex items-center gap-1" title="Completions">
+                                            <span>✅</span>
+                                            <span>{formatNumber(puzzle.completionCount)}</span>
+                                        </span>
+                                    </div>
 
                                     {/* Metadata */}
                                     <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-700">
@@ -123,7 +206,7 @@ export default async function CommunityPage() {
                 )}
 
                 {/* Create Button */}
-                {puzzles.length > 0 && (
+                {puzzleList.length > 0 && (
                     <div className="mt-12 text-center">
                         <Link
                             href="/create"

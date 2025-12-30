@@ -55,6 +55,9 @@ export async function GET(
       spangramWord: puzzle.spangramWord,
       spangramPath: puzzle.spangramPath,
       themeWords: puzzle.themeWords,
+      playCount: puzzle.playCount,
+      completionCount: puzzle.completionCount,
+      likeCount: puzzle.likeCount,
     };
 
     return NextResponse.json<GetPuzzleResponse>({
