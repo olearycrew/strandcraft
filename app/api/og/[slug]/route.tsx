@@ -3,6 +3,53 @@ import { NextRequest } from 'next/server';
 
 export const runtime = 'edge';
 
+// Catppuccin Mocha colors used in the app
+const colors = {
+    base: '#1e1e2e',
+    mantle: '#181825',
+    crust: '#11111b',
+    text: '#cdd6f4',
+    subtext0: '#a6adc8',
+    surface0: '#313244',
+    yellow: '#f9e2af',
+    blue: '#89b4fa',
+    mauve: '#cba6f7',
+    pink: '#f5c2e7',
+    green: '#a6e3a1',
+    peach: '#fab387',
+    teal: '#94e2d5',
+};
+
+// Letter colors matching the Header component
+const strandColors = [colors.yellow, colors.blue, colors.mauve, colors.pink, colors.green, colors.peach];
+const craftColors = [colors.teal, colors.blue, colors.mauve, colors.pink, colors.green];
+
+function truncateText(text: string, maxLength: number): string {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength - 3) + '...';
+}
+
+function LetterTile({ letter, color }: { letter: string; color: string }) {
+    return (
+        <div
+            style={{
+                width: 48,
+                height: 48,
+                backgroundColor: color,
+                borderRadius: 6,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: colors.crust,
+                fontSize: 28,
+                fontWeight: 'bold',
+            }}
+        >
+            {letter}
+        </div>
+    );
+}
+
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ slug: string }> }
@@ -11,10 +58,9 @@ export async function GET(
         const { slug } = await params;
 
         // Fetch puzzle data from the API endpoint
-        // This works in edge runtime since it's just an HTTP request
         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ||
-            process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` :
-            'http://localhost:3000';
+            (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` :
+                'http://localhost:3000');
 
         const apiUrl = `${baseUrl}/api/puzzles/${slug}`;
 
@@ -35,9 +81,13 @@ export async function GET(
             return new Response('Puzzle not found', { status: 404 });
         }
 
-        // STRANDCRAFT letters with yellow indices for spangram pattern
-        const letters = 'STRANDCRAFT'.split('');
-        const yellowIndices = [2, 4, 7, 10]; // R, N, R, T positions (spangram pattern)
+        // Prepare text content
+        const title = truncateText(puzzle.title || 'Untitled Puzzle', 50);
+        const clue = truncateText(puzzle.themeClue || '', 80);
+        const author = truncateText(puzzle.author || 'Anonymous', 30);
+
+        const strandLetters = 'STRAND'.split('');
+        const craftLetters = 'CRAFT'.split('');
 
         return new ImageResponse(
             (
@@ -48,74 +98,148 @@ export async function GET(
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        backgroundColor: '#0a0a0a',
-                        padding: '60px',
+                        justifyContent: 'flex-start',
+                        background: `linear-gradient(135deg, ${colors.crust} 0%, ${colors.base} 100%)`,
+                        padding: '0',
                     }}
                 >
-                    {/* Title */}
+                    {/* Top accent line */}
                     <div
                         style={{
-                            fontSize: 56,
-                            fontWeight: 'bold',
-                            color: 'white',
-                            marginBottom: 16,
-                            textAlign: 'center',
-                            maxWidth: '90%',
+                            width: '100%',
+                            height: 4,
+                            backgroundColor: colors.teal,
                         }}
-                    >
-                        "{puzzle.title}"
-                    </div>
+                    />
 
-                    {/* Author */}
-                    <div
-                        style={{
-                            fontSize: 28,
-                            color: '#888',
-                            marginBottom: 60,
-                        }}
-                    >
-                        by {puzzle.author}
-                    </div>
-
-                    {/* Letter squares */}
+                    {/* Main content area */}
                     <div
                         style={{
                             display: 'flex',
-                            flexDirection: 'row',
-                            gap: 10,
-                            marginBottom: 60,
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flex: 1,
+                            padding: '40px 60px',
+                            width: '100%',
                         }}
                     >
-                        {letters.map((letter, i) => (
-                            <div
-                                key={i}
-                                style={{
-                                    width: 64,
-                                    height: 64,
-                                    background: yellowIndices.includes(i) ? '#EAB308' : '#3B82F6',
-                                    borderRadius: 8,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    color: 'white',
-                                    fontSize: 32,
-                                    fontWeight: 'bold',
-                                }}
-                            >
-                                {letter}
-                            </div>
-                        ))}
+                        {/* STRANDCRAFT Logo */}
+                        <div
+                            style={{
+                                display: 'flex',
+                                flexDirection: 'row',
+                                gap: 6,
+                                marginBottom: 50,
+                            }}
+                        >
+                            {/* STRAND letters */}
+                            {strandLetters.map((letter, i) => (
+                                <LetterTile key={`s-${i}`} letter={letter} color={strandColors[i]} />
+                            ))}
+                            {/* Gap between STRAND and CRAFT */}
+                            <div style={{ width: 12 }} />
+                            {/* CRAFT letters */}
+                            {craftLetters.map((letter, i) => (
+                                <LetterTile key={`c-${i}`} letter={letter} color={craftColors[i]} />
+                            ))}
+                        </div>
+
+                        {/* Puzzle Title */}
+                        <div
+                            style={{
+                                fontSize: 52,
+                                fontWeight: 'bold',
+                                color: colors.text,
+                                textAlign: 'center',
+                                marginBottom: 30,
+                                maxWidth: '90%',
+                                lineHeight: 1.2,
+                            }}
+                        >
+                            &ldquo;{title}&rdquo;
+                        </div>
+
+                        {/* Theme Clue Label */}
+                        <div
+                            style={{
+                                fontSize: 18,
+                                fontWeight: 'bold',
+                                color: colors.teal,
+                                letterSpacing: '3px',
+                                marginBottom: 12,
+                            }}
+                        >
+                            THEME CLUE
+                        </div>
+
+                        {/* Theme Clue */}
+                        <div
+                            style={{
+                                fontSize: 28,
+                                color: colors.subtext0,
+                                textAlign: 'center',
+                                maxWidth: '85%',
+                                marginBottom: 30,
+                            }}
+                        >
+                            {clue}
+                        </div>
+
+                        {/* Author */}
+                        <div
+                            style={{
+                                fontSize: 22,
+                                color: colors.surface0,
+                            }}
+                        >
+                            by {author}
+                        </div>
                     </div>
 
                     {/* Footer */}
                     <div
                         style={{
-                            fontSize: 24,
-                            color: '#666',
+                            width: '100%',
+                            height: 70,
+                            backgroundColor: colors.mantle,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            position: 'relative',
                         }}
                     >
-                        strandcraft.app
+                        {/* Left accent */}
+                        <div
+                            style={{
+                                position: 'absolute',
+                                left: 40,
+                                top: 0,
+                                width: 60,
+                                height: 4,
+                                backgroundColor: colors.green,
+                            }}
+                        />
+                        {/* Right accent */}
+                        <div
+                            style={{
+                                position: 'absolute',
+                                right: 40,
+                                top: 0,
+                                width: 60,
+                                height: 4,
+                                backgroundColor: colors.green,
+                            }}
+                        />
+                        <div
+                            style={{
+                                fontSize: 22,
+                                fontWeight: 'bold',
+                                color: colors.subtext0,
+                            }}
+                        >
+                            strandcraft.app
+                        </div>
                     </div>
                 </div>
             ),

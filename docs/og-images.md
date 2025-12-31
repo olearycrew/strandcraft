@@ -2,41 +2,56 @@
 
 ## Overview
 
-Dynamic Open Graph (OG) images have been implemented for Strandcraft puzzle pages. When a puzzle is shared on social media, a unique branded image is generated showing the puzzle title, author, and the STRANDCRAFT logo in game colors.
+Dynamic Open Graph (OG) images are generated for Strandcraft puzzle pages. When a puzzle is shared on social media, a unique branded image is generated showing the puzzle title, theme clue, author, and the STRANDCRAFT logo using the app's Catppuccin color scheme.
 
 ## Implementation Details
 
-### Files Created/Modified
+### Files
 
 1. **[`app/api/og/[slug]/route.tsx`](../app/api/og/[slug]/route.tsx)** - OG image generation endpoint
 
-   - Uses `@vercel/og` package for image generation
+   - Uses `@vercel/og` package for PNG image generation
    - Runs on edge runtime for optimal performance
    - Fetches puzzle data via API to avoid database connection issues in edge runtime
    - Generates 1200x630px images (optimal for social media)
 
 2. **[`app/play/[slug]/page.tsx`](../app/play/[slug]/page.tsx)** - Server component with metadata
 
-   - Converted to server component to support `generateMetadata()`
-   - Generates OpenGraph and Twitter Card metadata
+   - Uses `generateMetadata()` to set OpenGraph and Twitter Card metadata
    - References the OG image endpoint
-
-3. **[`app/play/[slug]/PlayClient.tsx`](../app/play/[slug]/PlayClient.tsx)** - Client component
-   - Extracted all game logic into a client component
-   - Maintains all existing functionality (hints, game state, etc.)
 
 ## Visual Design
 
-The OG image follows the spec with:
+The OG image features:
 
-- **Dark background** (#0a0a0a) matching the app aesthetic
-- **Puzzle title** in large white text with quotes
-- **Author name** in gray below the title
-- **STRANDCRAFT branding** as colored letter squares:
-  - Blue squares (#3B82F6) for theme word letters
-  - Yellow squares (#EAB308) for spangram letters (positions 2, 4, 7, 10)
-  - Pattern: `S T R A N D C R A F T` with R, N, R, T in yellow
-- **Footer** with "strandcraft.app" in subtle gray
+- **Dark gradient background** using Catppuccin Mocha colors (crust to base)
+- **Teal accent line** at the top for visual interest
+- **STRANDCRAFT branding** as colored letter tiles matching the app header:
+  - STRAND: Yellow, Blue, Mauve, Pink, Green, Peach
+  - CRAFT: Teal, Blue, Mauve, Pink, Green
+- **Puzzle title** in large white text with quotation marks
+- **"THEME CLUE" label** in teal with letter spacing
+- **Theme clue text** in muted color below the label
+- **Author attribution** in subtle gray
+- **Footer** with "strandcraft.app" branding and green accent lines
+
+### Color Palette (Catppuccin Mocha)
+
+| Color    | Hex       | Usage                    |
+| -------- | --------- | ------------------------ |
+| Crust    | `#11111b` | Background gradient      |
+| Base     | `#1e1e2e` | Background gradient      |
+| Mantle   | `#181825` | Footer background        |
+| Text     | `#cdd6f4` | Title text               |
+| Subtext0 | `#a6adc8` | Clue text, footer text   |
+| Surface0 | `#313244` | Author text              |
+| Teal     | `#94e2d5` | Accent lines, clue label |
+| Green    | `#a6e3a1` | Footer accents           |
+| Yellow   | `#f9e2af` | S letter tile            |
+| Blue     | `#89b4fa` | T, R letter tiles        |
+| Mauve    | `#cba6f7` | R, A letter tiles        |
+| Pink     | `#f5c2e7` | A, F letter tiles        |
+| Peach    | `#fab387` | D letter tile            |
 
 ## Usage
 
@@ -44,7 +59,7 @@ The OG images are automatically generated when:
 
 - A puzzle page is accessed: `/play/[slug]`
 - Social media crawlers request metadata
-- The image endpoint is called: `/api/og/[slug]`
+- The image endpoint is called directly: `/api/og/[slug]`
 
 ## Metadata Tags
 
@@ -53,10 +68,15 @@ Each puzzle page includes:
 ```typescript
 {
   title: `${puzzle.title} | Strandcraft`,
-  description: `Play "${puzzle.title}" - a custom Strands puzzle by ${puzzle.author}`,
+  description: `Play "${puzzle.title}" - a custom Strands puzzle by ${puzzle.author}. Theme: ${puzzle.themeClue}`,
   openGraph: {
-    images: [`/api/og/${slug}`],
-    // ... other OG tags
+    images: [{
+      url: `/api/og/${slug}`,
+      width: 1200,
+      height: 630,
+      alt: `${puzzle.title} - Strandcraft Puzzle`,
+    }],
+    type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
@@ -65,28 +85,18 @@ Each puzzle page includes:
 }
 ```
 
-## Development Notes
-
-### Local Development Limitations
-
-The OG image generation may not work perfectly in local development due to:
-
-- Edge runtime limitations in Next.js dev mode
-- Font loading differences between dev and production
-- Image generation performance
-
-### Production Deployment
-
-On Vercel (production), the implementation will work seamlessly because:
-
-- Edge runtime is fully supported
-- Fonts are properly cached
-- Image generation is optimized
-- CDN caching improves performance
-
 ## Testing
 
-To test OG images in production:
+### Local Development
+
+```bash
+bun run dev
+# Visit: http://localhost:3000/api/og/[puzzle-slug]
+```
+
+Note: Edge runtime may have limitations in local development.
+
+### Production Testing
 
 1. **Deploy to Vercel**
 2. **Use social media debuggers:**
@@ -99,19 +109,19 @@ To test OG images in production:
    - Visit: `https://your-domain.com/api/og/[puzzle-slug]`
    - Should return a PNG image
 
-## Future Enhancements
+## Caching
 
-Potential improvements to consider:
+Images are cached with the following headers:
 
-1. **Dynamic grid preview** - Show actual puzzle grid (blurred/hidden)
-2. **Theme clue display** - Include the theme clue in the image
-3. **Completion stats** - Show puzzle difficulty or completion rate
-4. **Custom fonts** - Load custom fonts for better branding
-5. **Caching** - Implement caching strategy for generated images
+```
+Cache-Control: public, max-age=86400, s-maxage=86400
+```
+
+This caches images for 24 hours on both CDN and browser.
 
 ## Dependencies
 
-- `@vercel/og` (v0.8.6) - Image generation library
+- `@vercel/og` (v0.8.6) - Image generation library (uses Satori + Resvg)
 - Next.js 16+ - Server components and metadata API
 - Edge runtime - For optimal performance
 
@@ -121,3 +131,4 @@ Potential improvements to consider:
 - [Next.js Metadata API](https://nextjs.org/docs/app/building-your-application/optimizing/metadata)
 - [Open Graph Protocol](https://ogp.me/)
 - [Twitter Cards](https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/abouts-cards)
+- [Catppuccin Color Palette](https://catppuccin.com/)
