@@ -21,6 +21,7 @@ export default function CreatePage() {
     const router = useRouter();
     const [step, setStep] = useState<Step>('metadata');
     const [loading, setLoading] = useState(false);
+    const [layoutLoading, setLayoutLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     // Form state
@@ -72,17 +73,24 @@ export default function CreatePage() {
 
     const handleAutoLayout = () => {
         setError(null);
-        const validThemeWords = themeWords.filter(w => w.trim());
-        const result = autoLayout(spangramWord, validThemeWords);
+        setLayoutLoading(true);
 
-        if (!result.success) {
-            setError(result.error || 'Auto-layout failed');
-            return;
-        }
+        // Use setTimeout to allow UI to update with loading state before CPU-intensive work
+        setTimeout(() => {
+            const validThemeWords = themeWords.filter(w => w.trim());
+            const result = autoLayout(spangramWord, validThemeWords);
 
-        setGridLetters(result.gridLetters!);
-        setSpangramPath(result.spangramPath!);
-        setThemeWordPaths(result.themeWordPaths!);
+            setLayoutLoading(false);
+
+            if (!result.success) {
+                setError(result.error || 'Auto-layout failed');
+                return;
+            }
+
+            setGridLetters(result.gridLetters!);
+            setSpangramPath(result.spangramPath!);
+            setThemeWordPaths(result.themeWordPaths!);
+        }, 50); // Small delay to let React render loading state
     };
 
     const handleGridLetterChange = (index: number, letter: string) => {
@@ -355,6 +363,7 @@ export default function CreatePage() {
                         currentPath={currentPath}
                         isDrawing={isDrawing}
                         loading={loading}
+                        layoutLoading={layoutLoading}
                         onAutoLayout={handleAutoLayout}
                         onCellClick={handleCellClick}
                         onCellChange={handleGridLetterChange}

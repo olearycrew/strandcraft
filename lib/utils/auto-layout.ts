@@ -23,10 +23,16 @@ function shuffle<T>(array: T[]): T[] {
 }
 
 /**
- * Simple auto-layout algorithm (v1)
- * Places words sequentially in the grid, trying to find valid paths
- * Uses randomization so each run can produce different layouts
- * Tries multiple times to increase success rate
+ * Auto-layout algorithm (v2)
+ *
+ * Improvements over v1:
+ * 1. Sorts theme words by length (longest first) - longer words have fewer
+ *    valid placements, so placing them early maximizes success.
+ * 2. Uses limited word-level backtracking - if word N can't be placed, try a few
+ *    different positions for word N-1 instead of restarting the entire puzzle.
+ *
+ * Uses randomization so each run can produce different layouts.
+ * Tries multiple times to increase success rate.
  */
 export function autoLayout(
   spangramWord: string,
@@ -42,10 +48,28 @@ export function autoLayout(
     };
   }
 
+  // Improvement #1: Sort theme words by length (longest first)
+  // Longer words have fewer valid placements, so place them when more space is available
+  const sortedThemeWords = [...themeWords].sort((a, b) => b.length - a.length);
+
+  // Set a time limit to prevent UI from becoming unresponsive
+  const startTime = Date.now();
+  const maxTimeMs = 3000; // 3 seconds max
+
   // Try multiple times with different random seeds
-  const maxAttempts = 20;
+  const maxAttempts = 50;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const result = tryLayout(spangramWord, themeWords);
+    // Check time limit
+    if (Date.now() - startTime > maxTimeMs) {
+      break;
+    }
+
+    const result = tryLayoutWithLimitedBacktracking(
+      spangramWord,
+      sortedThemeWords,
+      startTime,
+      maxTimeMs
+    );
     if (result.success) {
       return result;
     }
@@ -59,7 +83,146 @@ export function autoLayout(
 }
 
 /**
- * Single attempt at creating a layout
+ * Attempt layout with limited backtracking - uses greedy placement
+ * for each word but tries multiple starting positions per word before
+ * fully backtracking. Much faster than full backtracking.
+ */
+function tryLayoutWithLimitedBacktracking(
+  spangramWord: string,
+  themeWords: string[],
+  startTime: number,
+  maxTimeMs: number
+): LayoutResult {
+  // Check time limit
+  if (Date.now() - startTime > maxTimeMs) {
+    return { success: false };
+  }
+
+  // Create empty grid
+  const grid: string[] = new Array(48).fill("");
+  const usedCells = new Set<number>();
+
+  // Place spangram first using greedy approach
+  const spangramPath = placeSpangram(spangramWord, grid, usedCells);
+  if (!spangramPath) {
+    return { success: false };
+  }
+
+  // Try to place theme words with limited backtracking
+  const themeWordPaths = placeWordsWithLimitedBacktracking(
+    themeWords,
+    0,
+    grid,
+    usedCells,
+    3, // Max backtracks per word
+    startTime,
+    maxTimeMs
+  );
+
+  if (!themeWordPaths) {
+    return { success: false };
+  }
+
+  return {
+    success: true,
+    gridLetters: grid.join(""),
+    spangramPath,
+    themeWordPaths,
+  };
+}
+
+/**
+ * Place words with limited backtracking
+ * For each word, tries up to maxAttempts different placements
+ * before giving up on that branch.
+ */
+function placeWordsWithLimitedBacktracking(
+  words: string[],
+  wordIndex: number,
+  grid: string[],
+  usedCells: Set<number>,
+  maxAttempts: number,
+  startTime: number,
+  maxTimeMs: number
+): Coordinate[][] | null {
+  // Check time limit
+  if (Date.now() - startTime > maxTimeMs) {
+    return null;
+  }
+
+  // Base case: all words placed
+  if (wordIndex >= words.length) {
+    return [];
+  }
+
+  const word = words[wordIndex];
+
+  // Get shuffled starting positions
+  const positions: Coordinate[] = [];
+  for (let row = 0; row < GRID_ROWS; row++) {
+    for (let col = 0; col < GRID_COLS; col++) {
+      positions.push({ row, col });
+    }
+  }
+  const shuffledPositions = shuffle(positions);
+
+  let attempts = 0;
+
+  // Try positions until we find one that works or hit max attempts
+  for (const pos of shuffledPositions) {
+    if (attempts >= maxAttempts) break;
+
+    // Check time limit periodically
+    if (Date.now() - startTime > maxTimeMs) {
+      return null;
+    }
+
+    const index = coordToIndex(pos);
+    if (usedCells.has(index)) continue;
+
+    // Try to find a path from this position
+    const path = tryPlaceFromPosition(word, pos, grid, usedCells);
+    if (!path) continue;
+
+    attempts++;
+
+    // Create copies for this attempt
+    const gridCopy = [...grid];
+    const usedCellsCopy = new Set(usedCells);
+    applyPath(word, path, gridCopy, usedCellsCopy);
+
+    // Try to place remaining words
+    const remainingPaths = placeWordsWithLimitedBacktracking(
+      words,
+      wordIndex + 1,
+      gridCopy,
+      usedCellsCopy,
+      maxAttempts,
+      startTime,
+      maxTimeMs
+    );
+
+    if (remainingPaths !== null) {
+      // Success! Copy state back
+      for (let i = 0; i < grid.length; i++) {
+        grid[i] = gridCopy[i];
+      }
+      usedCells.clear();
+      for (const cell of usedCellsCopy) {
+        usedCells.add(cell);
+      }
+      return [path, ...remainingPaths];
+    }
+    // This placement didn't work, try next position
+  }
+
+  return null;
+}
+
+// Legacy function kept for compatibility but now unused
+/**
+ * Single attempt at creating a layout (legacy v1 algorithm)
+ * @deprecated Use tryLayoutWithBacktracking instead
  */
 function tryLayout(spangramWord: string, themeWords: string[]): LayoutResult {
   // Create empty grid

@@ -17,6 +17,7 @@ interface GridStepProps {
     currentPath: Coordinate[];
     isDrawing: boolean;
     loading: boolean;
+    layoutLoading: boolean;
     onAutoLayout: () => void;
     onCellClick: (row: number, col: number) => void;
     onCellChange: (index: number, letter: string) => void;
@@ -40,6 +41,7 @@ export default function GridStep({
     currentPath,
     isDrawing,
     loading,
+    layoutLoading,
     onAutoLayout,
     onCellClick,
     onCellChange,
@@ -65,12 +67,22 @@ export default function GridStep({
                         </p>
                     </div>
 
-                    <button
-                        onClick={onAutoLayout}
-                        className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
-                    >
-                        🎲 {gridLetters.trim() ? 'Shuffle Layout' : 'Auto-Layout'}
-                    </button>
+                    {layoutLoading ? (
+                        <div className="flex items-center gap-3 bg-yellow-900/30 border border-yellow-500 rounded-lg p-4">
+                            <div className="animate-spin h-5 w-5 border-2 border-yellow-500 border-t-transparent rounded-full"></div>
+                            <div>
+                                <p className="font-bold text-yellow-300">Finding optimal layout...</p>
+                                <p className="text-sm text-yellow-200/70">This may take a few seconds for complex puzzles</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <button
+                            onClick={onAutoLayout}
+                            className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+                        >
+                            🎲 {gridLetters.trim() ? 'Shuffle Layout' : 'Auto-Layout'}
+                        </button>
+                    )}
                 </>
             )}
 
