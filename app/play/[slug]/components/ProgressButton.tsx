@@ -47,7 +47,7 @@ export default function ProgressButton({
             <span
                 className={`
                     relative z-10 transition-colors duration-300
-                    ${isReady ? 'text-ctp-base' : 'text-ctp-subtext0'}
+                    ${isReady || progress > 0 ? 'text-ctp-base' : 'text-ctp-subtext0'}
                 `}
             >
                 {getButtonText()}

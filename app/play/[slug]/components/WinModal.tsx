@@ -87,10 +87,10 @@ export default function WinModal({
                     <button
                         onClick={handleCopyResults}
                         className={`flex-1 py-3 px-6 rounded-lg font-bold transition-all ${shareStatus === 'copied'
-                                ? 'bg-ctp-green text-ctp-base'
-                                : shareStatus === 'error'
-                                    ? 'bg-ctp-red text-ctp-base'
-                                    : 'bg-ctp-surface1 hover:bg-ctp-surface2 text-ctp-text'
+                            ? 'bg-ctp-green text-ctp-base'
+                            : shareStatus === 'error'
+                                ? 'bg-ctp-red text-ctp-base'
+                                : 'bg-ctp-surface1 hover:bg-ctp-surface2 text-ctp-text'
                             }`}
                     >
                         {shareStatus === 'copied' ? '✓ Copied!' : shareStatus === 'error' ? 'Failed to copy' : 'Copy Results'}
@@ -100,8 +100,8 @@ export default function WinModal({
                         <button
                             onClick={handleNativeShare}
                             className={`flex-1 py-3 px-6 rounded-lg font-bold transition-all ${shareStatus === 'shared'
-                                    ? 'bg-ctp-green text-ctp-base'
-                                    : 'bg-ctp-blue hover:bg-ctp-blue/80 text-ctp-base'
+                                ? 'bg-ctp-green text-ctp-base'
+                                : 'bg-ctp-blue hover:bg-ctp-blue/80 text-ctp-base'
                                 }`}
                         >
                             {shareStatus === 'shared' ? '✓ Shared!' : 'Share'}
@@ -109,12 +109,21 @@ export default function WinModal({
                     )}
                 </div>
 
-                <Link
-                    href="/"
-                    className="inline-block text-ctp-blue hover:text-ctp-sky transition-colors"
-                >
-                    ← Back to Home
-                </Link>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <Link
+                        href="/community"
+                        className="inline-block text-ctp-green hover:text-ctp-teal transition-colors font-medium"
+                    >
+                        🎮 Play Another
+                    </Link>
+                    <span className="hidden sm:inline text-ctp-overlay0">•</span>
+                    <Link
+                        href="/"
+                        className="inline-block text-ctp-blue hover:text-ctp-sky transition-colors"
+                    >
+                        ← Back to Home
+                    </Link>
+                </div>
             </div>
         </div>
     );
