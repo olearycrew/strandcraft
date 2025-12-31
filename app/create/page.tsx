@@ -238,6 +238,27 @@ export default function CreatePage() {
         setError(null);
     };
 
+    const resetForm = () => {
+        // Reset all form state to initial values
+        setStep('metadata');
+        setLoading(false);
+        setLayoutLoading(false);
+        setError(null);
+        setTitle('');
+        setAuthor('');
+        setThemeClue('');
+        setSpangramWord('');
+        setThemeWords(['']);
+        setLayoutMode('auto');
+        setGridLetters(' '.repeat(48));
+        setSpangramPath([]);
+        setThemeWordPaths([]);
+        setPublishedSlug(null);
+        setCurrentWordIndex(0);
+        setCurrentPath([]);
+        setIsDrawing(false);
+    };
+
     const handleLayoutModeSelect = (mode: LayoutMode) => {
         setLayoutMode(mode);
         setStep('grid');
@@ -382,6 +403,7 @@ export default function CreatePage() {
                         title={title}
                         author={author}
                         slug={publishedSlug}
+                        onCreateAnother={resetForm}
                     />
                 )}
 
