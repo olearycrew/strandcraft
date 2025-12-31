@@ -14,6 +14,38 @@ export interface ValidationResult {
 }
 
 /**
+ * Format a user-friendly error message for path/word mismatch
+ */
+function formatPathMismatchError(
+  wordType: string,
+  wordIndex: number | null,
+  expectedWord: string,
+  actualWord: string
+): string {
+  const wordLabel =
+    wordIndex !== null ? `Theme word ${wordIndex + 1} ("${expectedWord}")` : wordType;
+
+  if (actualWord.length !== expectedWord.length) {
+    return `${wordLabel}: Path has ${actualWord.length} cells but word has ${expectedWord.length} letters. The path traced "${actualWord}" but expected "${expectedWord}".`;
+  }
+
+  // Find where the mismatch occurs
+  let mismatchIndex = -1;
+  for (let i = 0; i < expectedWord.length; i++) {
+    if (expectedWord[i] !== actualWord[i]) {
+      mismatchIndex = i;
+      break;
+    }
+  }
+
+  if (mismatchIndex >= 0) {
+    return `${wordLabel}: Path mismatch at position ${mismatchIndex + 1}. Expected "${expectedWord}" but path traced "${actualWord}". Try regenerating the layout or adjusting your words.`;
+  }
+
+  return `${wordLabel}: Path does not match the word in the grid. Expected "${expectedWord}" but got "${actualWord}".`;
+}
+
+/**
  * Validate puzzle data before saving to database
  */
 export function validatePuzzle(input: CreatePuzzleInput): ValidationResult {
@@ -59,10 +91,14 @@ export function validatePuzzle(input: CreatePuzzleInput): ValidationResult {
     errors.push("Spangram path is required");
   } else {
     if (!isValidPath(input.spangramPath)) {
-      errors.push("Spangram path contains invalid or non-adjacent coordinates");
+      errors.push(
+        `Spangram ("${input.spangramWord}"): Path contains invalid or non-adjacent coordinates. Each cell must be adjacent to the previous one.`
+      );
     }
     if (!spansOppositeEdges(input.spangramPath)) {
-      errors.push("Spangram must span opposite edges of the grid");
+      errors.push(
+        `Spangram ("${input.spangramWord}"): Must span from one edge to the opposite edge (top-to-bottom or left-to-right).`
+      );
     }
     if (input.gridLetters && input.gridLetters.length === GRID_SIZE) {
       const spangramFromGrid = getWordFromPath(
@@ -70,7 +106,14 @@ export function validatePuzzle(input: CreatePuzzleInput): ValidationResult {
         input.spangramPath
       );
       if (spangramFromGrid !== input.spangramWord) {
-        errors.push("Spangram path does not match spangram word in grid");
+        errors.push(
+          formatPathMismatchError(
+            `Spangram ("${input.spangramWord}")`,
+            null,
+            input.spangramWord,
+            spangramFromGrid
+          )
+        );
       }
     }
   }
@@ -83,15 +126,19 @@ export function validatePuzzle(input: CreatePuzzleInput): ValidationResult {
       const themeWord = input.themeWords[i];
 
       if (!themeWord.word || themeWord.word.length < 4) {
-        errors.push(`Theme word ${i + 1} must be at least 4 characters`);
+        errors.push(
+          `Theme word ${i + 1} ("${themeWord.word || ""}"): Must be at least 4 characters long.`
+        );
       }
 
       if (!themeWord.path || themeWord.path.length === 0) {
-        errors.push(`Theme word ${i + 1} is missing a path`);
+        errors.push(
+          `Theme word ${i + 1} ("${themeWord.word}"): Missing path. Please draw or generate a path for this word.`
+        );
       } else {
         if (!isValidPath(themeWord.path)) {
           errors.push(
-            `Theme word ${i + 1} has invalid or non-adjacent coordinates`
+            `Theme word ${i + 1} ("${themeWord.word}"): Path contains invalid or non-adjacent coordinates. Each cell must be adjacent to the previous one.`
           );
         }
         if (input.gridLetters && input.gridLetters.length === GRID_SIZE) {
@@ -100,7 +147,14 @@ export function validatePuzzle(input: CreatePuzzleInput): ValidationResult {
             themeWord.path
           );
           if (wordFromGrid !== themeWord.word) {
-            errors.push(`Theme word ${i + 1} path does not match word in grid`);
+            errors.push(
+              formatPathMismatchError(
+                `Theme word ${i + 1}`,
+                i,
+                themeWord.word,
+                wordFromGrid
+              )
+            );
           }
         }
       }

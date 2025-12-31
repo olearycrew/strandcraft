@@ -10,6 +10,51 @@ interface LayoutResult {
   error?: string;
 }
 
+// Enable debug logging (set to true for development debugging)
+const DEBUG_AUTO_LAYOUT = false;
+
+function debugLog(...args: unknown[]): void {
+  if (DEBUG_AUTO_LAYOUT) {
+    console.log("[AutoLayout]", ...args);
+  }
+}
+
+/**
+ * Helper to visualize the grid state for debugging
+ */
+function gridToString(grid: string[]): string {
+  let result = "\n";
+  for (let row = 0; row < GRID_ROWS; row++) {
+    const rowLetters = grid.slice(row * GRID_COLS, (row + 1) * GRID_COLS);
+    result += rowLetters.map((l) => l || ".").join(" ") + "\n";
+  }
+  return result;
+}
+
+/**
+ * Helper to format a path for debugging
+ */
+function pathToString(path: Coordinate[]): string {
+  return path.map((c) => `(${c.row},${c.col})`).join(" → ");
+}
+
+/**
+ * Verify that a path matches the expected word in the grid
+ */
+function verifyPathMatchesWord(
+  word: string,
+  path: Coordinate[],
+  grid: string[]
+): { matches: boolean; actual: string } {
+  const actual = path.map((c) => grid[coordToIndex(c)] || "?").join("");
+  return { matches: actual === word, actual };
+}
+
+interface IndexedWord {
+  word: string;
+  originalIndex: number;
+}
+
 /**
  * Shuffle an array in place (Fisher-Yates algorithm)
  */
@@ -41,6 +86,9 @@ export function autoLayout(
   const allWords = [spangramWord, ...themeWords];
   const totalLetters = allWords.reduce((sum, word) => sum + word.length, 0);
 
+  debugLog("Starting auto-layout with spangram:", spangramWord);
+  debugLog("Theme words (original order):", themeWords);
+
   if (totalLetters !== 48) {
     return {
       success: false,
@@ -48,9 +96,22 @@ export function autoLayout(
     };
   }
 
-  // Improvement #1: Sort theme words by length (longest first)
-  // Longer words have fewer valid placements, so place them when more space is available
-  const sortedThemeWords = [...themeWords].sort((a, b) => b.length - a.length);
+  // Create indexed words to track original positions
+  // This is critical: we sort for better placement, but must return paths in original order
+  const indexedWords: IndexedWord[] = themeWords.map((word, index) => ({
+    word,
+    originalIndex: index,
+  }));
+
+  // Sort by length (longest first) - longer words have fewer valid placements
+  const sortedIndexedWords = [...indexedWords].sort(
+    (a, b) => b.word.length - a.word.length
+  );
+
+  debugLog(
+    "Theme words (sorted by length):",
+    sortedIndexedWords.map((w) => `${w.word}(idx:${w.originalIndex})`)
+  );
 
   // Set a time limit to prevent UI from becoming unresponsive
   const startTime = Date.now();
@@ -61,17 +122,79 @@ export function autoLayout(
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     // Check time limit
     if (Date.now() - startTime > maxTimeMs) {
+      debugLog("Time limit reached after", attempt, "attempts");
       break;
     }
 
     const result = tryLayoutWithLimitedBacktracking(
       spangramWord,
-      sortedThemeWords,
+      sortedIndexedWords,
       startTime,
       maxTimeMs
     );
-    if (result.success) {
-      return result;
+
+    if (result.success && result.themeWordPaths && result.gridLetters) {
+      // CRITICAL FIX: Reorder paths back to original theme word order
+      // The paths are currently in sorted order, but we need them in original order
+      const reorderedPaths: Coordinate[][] = new Array(themeWords.length);
+
+      for (let i = 0; i < sortedIndexedWords.length; i++) {
+        const originalIndex = sortedIndexedWords[i].originalIndex;
+        reorderedPaths[originalIndex] = result.themeWordPaths[i];
+      }
+
+      debugLog("Layout successful on attempt", attempt + 1);
+      debugLog("Grid state:", gridToString(result.gridLetters.split("")));
+
+      // Verify all paths match their words (sanity check)
+      const grid = result.gridLetters.split("");
+      let allMatch = true;
+
+      // Verify spangram
+      const spangramCheck = verifyPathMatchesWord(
+        spangramWord,
+        result.spangramPath!,
+        grid
+      );
+      if (!spangramCheck.matches) {
+        debugLog(
+          `ERROR: Spangram path mismatch! Expected "${spangramWord}", got "${spangramCheck.actual}"`
+        );
+        allMatch = false;
+      } else {
+        debugLog(
+          `✓ Spangram "${spangramWord}" verified at path:`,
+          pathToString(result.spangramPath!)
+        );
+      }
+
+      // Verify theme words with reordered paths
+      for (let i = 0; i < themeWords.length; i++) {
+        const word = themeWords[i];
+        const path = reorderedPaths[i];
+        const check = verifyPathMatchesWord(word, path, grid);
+        if (!check.matches) {
+          debugLog(
+            `ERROR: Theme word ${i + 1} path mismatch! Expected "${word}", got "${check.actual}"`
+          );
+          debugLog(`  Path: ${pathToString(path)}`);
+          allMatch = false;
+        } else {
+          debugLog(`✓ Theme word "${word}" verified at path:`, pathToString(path));
+        }
+      }
+
+      if (!allMatch) {
+        debugLog("Path verification failed, continuing to next attempt...");
+        continue;
+      }
+
+      return {
+        success: true,
+        gridLetters: result.gridLetters,
+        spangramPath: result.spangramPath,
+        themeWordPaths: reorderedPaths,
+      };
     }
   }
 
@@ -89,7 +212,7 @@ export function autoLayout(
  */
 function tryLayoutWithLimitedBacktracking(
   spangramWord: string,
-  themeWords: string[],
+  indexedWords: IndexedWord[],
   startTime: number,
   maxTimeMs: number
 ): LayoutResult {
@@ -108,9 +231,15 @@ function tryLayoutWithLimitedBacktracking(
     return { success: false };
   }
 
+  debugLog("Spangram placed:", pathToString(spangramPath));
+  debugLog("Grid after spangram:", gridToString(grid));
+
+  // Extract just the words for placement (in sorted order)
+  const sortedWords = indexedWords.map((iw) => iw.word);
+
   // Try to place theme words with limited backtracking
   const themeWordPaths = placeWordsWithLimitedBacktracking(
-    themeWords,
+    sortedWords,
     0,
     grid,
     usedCells,
@@ -122,6 +251,9 @@ function tryLayoutWithLimitedBacktracking(
   if (!themeWordPaths) {
     return { success: false };
   }
+
+  debugLog("All words placed successfully");
+  debugLog("Final grid:", gridToString(grid));
 
   return {
     success: true,
