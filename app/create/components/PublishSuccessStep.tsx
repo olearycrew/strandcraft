@@ -7,6 +7,7 @@ interface PublishSuccessStepProps {
     title: string;
     author: string;
     slug: string;
+    isBlindMode?: boolean;
     onCreateAnother: () => void;
 }
 
@@ -14,6 +15,7 @@ export default function PublishSuccessStep({
     title,
     author,
     slug,
+    isBlindMode = false,
     onCreateAnother,
 }: PublishSuccessStepProps) {
     const [linkCopied, setLinkCopied] = useState(false);
@@ -27,9 +29,18 @@ export default function PublishSuccessStep({
 
     return (
         <div className="text-center space-y-6">
-            <div className="text-6xl">🎉</div>
+            <div className="text-6xl">{isBlindMode ? '🙈🎉' : '🎉'}</div>
             <h2 className="text-3xl font-bold">Puzzle Published!</h2>
             <p className="text-xl text-gray-400">"{title}" by {author}</p>
+
+            {isBlindMode && (
+                <div className="bg-purple-900/30 border border-purple-500 rounded-lg p-4 max-w-md mx-auto">
+                    <p className="text-purple-200 text-sm">
+                        🎲 Your puzzle was created in <strong>Blind Mode</strong> - you never saw the layout!
+                        Now you can play your own puzzle and discover how the words were arranged.
+                    </p>
+                </div>
+            )}
 
             <div className="space-y-4 max-w-md mx-auto">
                 <button
@@ -46,7 +57,7 @@ export default function PublishSuccessStep({
                     href={`/play/${slug}`}
                     className="block w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
                 >
-                    ▶ Play Your Puzzle
+                    {isBlindMode ? '🎮 Play Your Puzzle (Surprise!)' : '▶ Play Your Puzzle'}
                 </Link>
 
                 <button
