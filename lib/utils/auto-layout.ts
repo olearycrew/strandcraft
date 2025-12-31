@@ -10,8 +10,8 @@ interface LayoutResult {
   error?: string;
 }
 
-// Enable debug logging (set to true for development debugging)
-const DEBUG_AUTO_LAYOUT = false;
+// Enable debug logging automatically in development mode
+const DEBUG_AUTO_LAYOUT = process.env.NODE_ENV === "development";
 
 function debugLog(...args: unknown[]): void {
   if (DEBUG_AUTO_LAYOUT) {
