@@ -14,19 +14,19 @@ interface PuzzleGridProps {
 }
 
 function getCellClassName(state: CellState): string {
-    const base = 'w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center text-xl sm:text-2xl font-bold rounded cursor-pointer transition-all select-none';
+    const base = 'w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center text-xl sm:text-2xl font-bold rounded-full cursor-pointer transition-all select-none relative z-10';
 
     switch (state) {
         case 'selected':
-            return `${base} bg-transparent text-ctp-text scale-105 z-10`;
+            return `${base} bg-transparent text-ctp-crust`;
         case 'hint':
-            return `${base} bg-ctp-surface1 text-ctp-text border-2 border-dashed border-ctp-yellow`;
+            return `${base} bg-transparent text-ctp-text border-2 border-dashed border-ctp-yellow`;
         case 'found-spangram':
-            return `${base} bg-transparent text-ctp-base z-10`;
+            return `${base} bg-transparent text-ctp-crust`;
         case 'found-theme':
-            return `${base} bg-transparent text-ctp-base z-10`;
+            return `${base} bg-transparent text-ctp-crust`;
         default:
-            return `${base} bg-ctp-surface1 hover:bg-ctp-surface2 text-ctp-text`;
+            return `${base} bg-transparent text-ctp-subtext0 hover:text-ctp-text`;
     }
 }
 
@@ -122,9 +122,8 @@ export default function PuzzleGrid({
                                         x2={toX}
                                         y2={toY}
                                         stroke={BLUE}
-                                        strokeWidth="10"
+                                        strokeWidth={cellSize * 0.35}
                                         strokeLinecap="round"
-                                        opacity="0.6"
                                     />
                                 );
                             })}
@@ -138,9 +137,8 @@ export default function PuzzleGrid({
                                         key={`current-circle-${i}`}
                                         cx={x}
                                         cy={y}
-                                        r={cellSize / 2 - 2}
+                                        r={cellSize / 2}
                                         fill={BLUE}
-                                        opacity="0.5"
                                     />
                                 );
                             })}
@@ -169,9 +167,8 @@ export default function PuzzleGrid({
                                     x2={toX}
                                     y2={toY}
                                     stroke={color}
-                                    strokeWidth="10"
+                                    strokeWidth={cellSize * 0.35}
                                     strokeLinecap="round"
-                                    opacity="0.6"
                                 />
                             );
                         }
@@ -187,9 +184,8 @@ export default function PuzzleGrid({
                                     key={`circle-${wordIndex}-${i}`}
                                     cx={x}
                                     cy={y}
-                                    r={cellSize / 2 - 2}
+                                    r={cellSize / 2}
                                     fill={color}
-                                    opacity="0.7"
                                 />
                             );
                         }

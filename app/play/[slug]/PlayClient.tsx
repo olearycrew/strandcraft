@@ -27,6 +27,8 @@ import {
     WinModal,
     FoundWord,
     HintState,
+    GameAction,
+    ACTION_EMOJIS,
 } from './components';
 
 export default function PlayClient({ slug }: { slug: string }) {
@@ -39,6 +41,7 @@ export default function PlayClient({ slug }: { slug: string }) {
     const [currentPath, setCurrentPath] = useState<Coordinate[]>([]);
     const [gameWon, setGameWon] = useState(false);
     const [feedback, setFeedback] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+    const [gameActions, setGameActions] = useState<GameAction[]>([]);
 
     // Like state
     const [liked, setLiked] = useState(false);
@@ -161,8 +164,15 @@ export default function PlayClient({ slug }: { slug: string }) {
         if (selectedWord === puzzle.spangramWord && pathsMatch(currentPath, puzzle.spangramPath)) {
             const alreadyFound = foundWords.some(w => w.type === 'spangram');
             if (!alreadyFound) {
-                const newFoundWords = [...foundWords, { word: selectedWord, path: currentPath, type: 'spangram' as const }];
+                const newFoundWord: FoundWord = {
+                    word: selectedWord,
+                    path: currentPath,
+                    type: 'spangram',
+                    emoji: ACTION_EMOJIS.spangram
+                };
+                const newFoundWords = [...foundWords, newFoundWord];
                 setFoundWords(newFoundWords);
+                setGameActions(prev => [...prev, { type: 'spangram', word: selectedWord }]);
                 checkWinCondition(newFoundWords);
                 setCurrentPath([]);
                 return;
@@ -175,8 +185,15 @@ export default function PlayClient({ slug }: { slug: string }) {
             if (selectedWord === themeWord.word && pathsMatch(currentPath, themeWord.path)) {
                 const alreadyFound = foundWords.some(w => w.word === themeWord.word);
                 if (!alreadyFound) {
-                    const newFoundWords = [...foundWords, { word: selectedWord, path: currentPath, type: 'theme' as const }];
+                    const newFoundWord: FoundWord = {
+                        word: selectedWord,
+                        path: currentPath,
+                        type: 'theme',
+                        emoji: ACTION_EMOJIS.word
+                    };
+                    const newFoundWords = [...foundWords, newFoundWord];
                     setFoundWords(newFoundWords);
+                    setGameActions(prev => [...prev, { type: 'word', word: selectedWord }]);
                     checkWinCondition(newFoundWords);
                     foundThemeWord = true;
                     break;
@@ -258,11 +275,20 @@ export default function PlayClient({ slug }: { slug: string }) {
 
     const getHintProgress = (): number => {
         if (!hintState.enabled || hintState.currentHintPath !== null) return 0;
-        return Math.min(hintState.nonThemeWordsFound.length, 3);
+        // Show progress toward next hint (0-3), with any overflow counting toward the next
+        return hintState.nonThemeWordsFound.length % 3 || (hintState.nonThemeWordsFound.length >= 3 ? 3 : 0);
+    };
+
+    const getAvailableHints = (): number => {
+        if (!hintState.enabled || hintState.currentHintPath !== null) return 0;
+        return Math.floor(hintState.nonThemeWordsFound.length / 3);
     };
 
     const useHint = () => {
         if (!puzzle || !canUseHint()) return;
+
+        // Track hint action in game actions
+        setGameActions(prev => [...prev, { type: 'hint' }]);
 
         const unfoundThemeWords = puzzle.themeWords.filter(
             tw => !foundWords.some(fw => fw.word === tw.word)
@@ -273,7 +299,8 @@ export default function PlayClient({ slug }: { slug: string }) {
                 ...prev,
                 currentHintPath: puzzle.spangramPath,
                 hintsUsed: prev.hintsUsed + 1,
-                nonThemeWordsFound: [],
+                // Keep any overflow words (subtract 3 for the hint used)
+                nonThemeWordsFound: prev.nonThemeWordsFound.slice(3),
             }));
         } else if (unfoundThemeWords.length > 0) {
             const randomWord = unfoundThemeWords[Math.floor(Math.random() * unfoundThemeWords.length)];
@@ -281,7 +308,8 @@ export default function PlayClient({ slug }: { slug: string }) {
                 ...prev,
                 currentHintPath: randomWord.path,
                 hintsUsed: prev.hintsUsed + 1,
-                nonThemeWordsFound: [],
+                // Keep any overflow words (subtract 3 for the hint used)
+                nonThemeWordsFound: prev.nonThemeWordsFound.slice(3),
             }));
         }
     };
@@ -327,8 +355,8 @@ export default function PlayClient({ slug }: { slug: string }) {
                                 onClick={handleLike}
                                 disabled={likeLoading}
                                 className={`px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2 ${liked
-                                        ? 'bg-ctp-pink hover:bg-ctp-pink/80 text-ctp-base'
-                                        : 'bg-ctp-surface1 hover:bg-ctp-surface2 text-ctp-subtext1'
+                                    ? 'bg-ctp-pink hover:bg-ctp-pink/80 text-ctp-base'
+                                    : 'bg-ctp-surface1 hover:bg-ctp-surface2 text-ctp-subtext1'
                                     }`}
                             >
                                 <span>{liked ? '❤️' : '🤍'}</span>
@@ -337,8 +365,8 @@ export default function PlayClient({ slug }: { slug: string }) {
                             <button
                                 onClick={toggleHints}
                                 className={`px-4 py-2 rounded-lg font-semibold transition-colors ${hintState.enabled
-                                        ? 'bg-ctp-yellow hover:bg-ctp-yellow/80 text-ctp-base'
-                                        : 'bg-ctp-surface1 hover:bg-ctp-surface2 text-ctp-subtext1'
+                                    ? 'bg-ctp-yellow hover:bg-ctp-yellow/80 text-ctp-base'
+                                    : 'bg-ctp-surface1 hover:bg-ctp-surface2 text-ctp-subtext1'
                                     }`}
                             >
                                 {hintState.enabled ? '💡 Hints: ON' : '💡 Hints: OFF'}
@@ -378,6 +406,7 @@ export default function PlayClient({ slug }: { slug: string }) {
                         <HintPanel
                             enabled={hintState.enabled}
                             progress={getHintProgress()}
+                            availableHints={getAvailableHints()}
                             canUseHint={canUseHint()}
                             hasActiveHint={hintState.currentHintPath !== null}
                             hintsUsed={hintState.hintsUsed}
@@ -389,6 +418,7 @@ export default function PlayClient({ slug }: { slug: string }) {
                 {gameWon && (
                     <WinModal
                         foundWords={foundWords}
+                        gameActions={gameActions}
                         hintsUsed={hintState.hintsUsed}
                         totalWords={totalWords}
                         puzzleTitle={puzzle.title}

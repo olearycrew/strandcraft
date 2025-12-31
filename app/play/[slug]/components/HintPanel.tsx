@@ -5,6 +5,7 @@ import ProgressButton from './ProgressButton';
 interface HintPanelProps {
     enabled: boolean;
     progress: number;
+    availableHints: number;
     canUseHint: boolean;
     hasActiveHint: boolean;
     hintsUsed: number;
@@ -14,6 +15,7 @@ interface HintPanelProps {
 export default function HintPanel({
     enabled,
     progress,
+    availableHints,
     canUseHint,
     hasActiveHint,
     hintsUsed,
@@ -33,6 +35,12 @@ export default function HintPanel({
                 onClick={onUseHint}
                 isActive={hasActiveHint}
             />
+
+            {availableHints > 1 && !hasActiveHint && (
+                <p className="text-sm text-ctp-green mt-3">
+                    🎯 {availableHints} hints available!
+                </p>
+            )}
 
             {hasActiveHint && (
                 <p className="text-sm text-ctp-yellow mt-3">

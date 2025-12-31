@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { generateShareText, generateWordOrderEmojis, copyToClipboard, nativeShare, canUseNativeShare } from '@/lib/utils/share';
-import type { FoundWord } from './types';
+import { generateShareText, generateEmojiGrid, copyToClipboard, nativeShare, canUseNativeShare } from '@/lib/utils/share';
+import type { FoundWord, GameAction } from './types';
 
 interface WinModalProps {
     foundWords: FoundWord[];
+    gameActions: GameAction[];
     hintsUsed: number;
     totalWords: number;
     puzzleTitle: string;
@@ -15,6 +16,7 @@ interface WinModalProps {
 
 export default function WinModal({
     foundWords,
+    gameActions,
     hintsUsed,
     totalWords,
     puzzleTitle,
@@ -30,7 +32,7 @@ export default function WinModal({
     const getShareOptions = () => ({
         puzzleTitle,
         puzzleSlug,
-        foundWords: foundWords.map(fw => ({ word: fw.word, type: fw.type })),
+        gameActions,
         hintsUsed,
         totalWords,
     });
@@ -67,8 +69,8 @@ export default function WinModal({
                     You found all {foundWords.length} words!
                 </p>
 
-                <div className="text-2xl mb-4 tracking-wider">
-                    {generateWordOrderEmojis(foundWords.map(fw => ({ word: fw.word, type: fw.type })))}
+                <div className="text-2xl mb-4 tracking-wider font-mono whitespace-pre-line">
+                    {generateEmojiGrid(gameActions)}
                 </div>
 
                 {hintsUsed > 0 ? (
@@ -77,20 +79,19 @@ export default function WinModal({
                     </p>
                 ) : (
                     <p className="text-sm text-ctp-green mb-6">
-                        No hints!
+                        No hints! 🌟
                     </p>
                 )}
 
                 <div className="flex flex-col sm:flex-row gap-3 mb-6">
                     <button
                         onClick={handleCopyResults}
-                        className={`flex-1 py-3 px-6 rounded-lg font-bold transition-all ${
-                            shareStatus === 'copied'
+                        className={`flex-1 py-3 px-6 rounded-lg font-bold transition-all ${shareStatus === 'copied'
                                 ? 'bg-ctp-green text-ctp-base'
                                 : shareStatus === 'error'
                                     ? 'bg-ctp-red text-ctp-base'
                                     : 'bg-ctp-surface1 hover:bg-ctp-surface2 text-ctp-text'
-                        }`}
+                            }`}
                     >
                         {shareStatus === 'copied' ? '✓ Copied!' : shareStatus === 'error' ? 'Failed to copy' : 'Copy Results'}
                     </button>
@@ -98,11 +99,10 @@ export default function WinModal({
                     {showNativeShare && (
                         <button
                             onClick={handleNativeShare}
-                            className={`flex-1 py-3 px-6 rounded-lg font-bold transition-all ${
-                                shareStatus === 'shared'
+                            className={`flex-1 py-3 px-6 rounded-lg font-bold transition-all ${shareStatus === 'shared'
                                     ? 'bg-ctp-green text-ctp-base'
                                     : 'bg-ctp-blue hover:bg-ctp-blue/80 text-ctp-base'
-                            }`}
+                                }`}
                         >
                             {shareStatus === 'shared' ? '✓ Shared!' : 'Share'}
                         </button>

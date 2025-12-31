@@ -1,62 +1,54 @@
 // lib/utils/share.ts
 
-interface FoundWord {
-  word: string;
-  type: "theme" | "spangram";
-}
+import type { GameAction } from "@/app/play/[slug]/components/types";
+import { ACTION_EMOJIS } from "@/app/play/[slug]/components/types";
 
 interface ShareOptions {
   puzzleTitle: string;
   puzzleSlug: string;
-  foundWords: FoundWord[];
+  gameActions: GameAction[];
   hintsUsed: number;
   totalWords: number;
 }
 
-// Emoji colors for representing word order
-const THEME_EMOJIS = ["🟦", "🟩", "🟪", "🟫", "⬜", "🟧"];
-const SPANGRAM_EMOJI = "🟨";
+// Width of emoji grid rows
+const EMOJI_ROW_WIDTH = 4;
 
 /**
- * Generate a visual representation of the word order using emojis
- * Each theme word gets a colored square, spangram gets yellow
+ * Generate an emoji grid representation of game actions
+ * Actions are displayed in rows of 4, showing the order of hints, words, and spangram
  */
-export function generateWordOrderEmojis(foundWords: FoundWord[]): string {
-  let themeWordIndex = 0;
+export function generateEmojiGrid(gameActions: GameAction[]): string {
+  const emojis = gameActions.map((action) => ACTION_EMOJIS[action.type]);
 
-  return foundWords
-    .map((word) => {
-      if (word.type === "spangram") {
-        return SPANGRAM_EMOJI;
-      }
-      // Cycle through theme emojis for variety
-      const emoji = THEME_EMOJIS[themeWordIndex % THEME_EMOJIS.length];
-      themeWordIndex++;
-      return emoji;
-    })
-    .join("");
+  // Split into rows of EMOJI_ROW_WIDTH
+  const rows: string[] = [];
+  for (let i = 0; i < emojis.length; i += EMOJI_ROW_WIDTH) {
+    rows.push(emojis.slice(i, i + EMOJI_ROW_WIDTH).join(""));
+  }
+
+  return rows.join("\n");
 }
 
 /**
  * Generate the full shareable text for puzzle results
+ * Format:
+ * StrandCraft
+ * "{title}"
+ * 💡🟦💡🟦
+ * 💡🟦🟨🟦
+ * 💡💡🟦
  */
 export function generateShareText(options: ShareOptions): string {
-  const { puzzleTitle, puzzleSlug, foundWords, hintsUsed, totalWords } =
-    options;
+  const { puzzleTitle, puzzleSlug, gameActions } = options;
 
-  const wordEmojis = generateWordOrderEmojis(foundWords);
+  const emojiGrid = generateEmojiGrid(gameActions);
   const puzzleUrl = `https://strandcraft.app/play/${puzzleSlug}`;
 
-  let shareText = `${wordEmojis}\n`;
-  shareText += `${totalWords}/${totalWords} words found`;
-
-  if (hintsUsed > 0) {
-    shareText += ` • ${hintsUsed} hint${hintsUsed === 1 ? "" : "s"} used`;
-  } else {
-    shareText += ` • No hints! 🌟`;
-  }
-
-  shareText += `\n\n${puzzleUrl}`;
+  let shareText = `StrandCraft\n`;
+  shareText += `"${puzzleTitle}"\n`;
+  shareText += `${emojiGrid}\n\n`;
+  shareText += `${puzzleUrl}`;
 
   return shareText;
 }
