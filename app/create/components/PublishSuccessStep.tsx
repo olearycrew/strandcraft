@@ -7,12 +7,14 @@ interface PublishSuccessStepProps {
     title: string;
     author: string;
     slug: string;
+    onCreateAnother: () => void;
 }
 
 export default function PublishSuccessStep({
     title,
     author,
     slug,
+    onCreateAnother,
 }: PublishSuccessStepProps) {
     const [linkCopied, setLinkCopied] = useState(false);
 
@@ -47,12 +49,12 @@ export default function PublishSuccessStep({
                     ▶ Play Your Puzzle
                 </Link>
 
-                <Link
-                    href="/create"
+                <button
+                    onClick={onCreateAnother}
                     className="block w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
                 >
                     Create Another Puzzle
-                </Link>
+                </button>
             </div>
         </div>
     );
