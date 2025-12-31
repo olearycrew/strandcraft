@@ -132,6 +132,15 @@ export default function PlayClient({ slug }: { slug: string }) {
         const alreadyInPath = currentPath.some(c => c.row === row && c.col === col);
         if (alreadyInPath) return;
 
+        // Calculate max word length from puzzle words
+        const maxWordLength = Math.max(
+            puzzle.spangramWord.length,
+            ...puzzle.themeWords.map(tw => tw.word.length)
+        );
+
+        // Prevent selecting more letters than the longest word
+        if (currentPath.length >= maxWordLength) return;
+
         setCurrentPath([...currentPath, newCoord]);
     };
 
