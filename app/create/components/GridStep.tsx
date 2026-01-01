@@ -4,7 +4,7 @@ import type { Coordinate } from '@/types/puzzle';
 import GridRenderer from './GridRenderer';
 import ManualLayoutControls from './ManualLayoutControls';
 
-type LayoutMode = 'auto' | 'manual';
+type LayoutMode = 'auto' | 'manual' | 'blind';
 
 interface GridStepProps {
     layoutMode: LayoutMode;

@@ -9,7 +9,7 @@ interface GridRendererProps {
     themeWordPaths: Coordinate[][];
     currentPath: Coordinate[];
     isDrawing: boolean;
-    layoutMode: 'auto' | 'manual';
+    layoutMode: 'auto' | 'manual' | 'blind';
     currentWord?: string;
     onCellClick: (row: number, col: number) => void;
     onCellChange: (index: number, letter: string) => void;

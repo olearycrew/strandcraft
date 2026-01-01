@@ -1,6 +1,6 @@
 'use client';
 
-type LayoutMode = 'auto' | 'manual';
+type LayoutMode = 'auto' | 'manual' | 'blind';
 
 interface LayoutModeStepProps {
     onSelectMode: (mode: LayoutMode) => void;
@@ -15,7 +15,7 @@ export default function LayoutModeStep({
         <div className="space-y-6">
             <h2 className="text-2xl font-bold mb-4">Choose Layout Method</h2>
 
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-3 gap-6">
                 <button
                     onClick={() => onSelectMode('auto')}
                     className="p-6 rounded-lg border-2 border-gray-700 bg-gray-800 hover:border-gray-600 transition-all text-left"
@@ -49,6 +49,23 @@ export default function LayoutModeStep({
                         <li>✓ Create custom patterns</li>
                         <li>✓ Draw paths cell by cell</li>
                         <li>✓ Perfect for specific designs</li>
+                    </ul>
+                </button>
+
+                <button
+                    onClick={() => onSelectMode('blind')}
+                    className="p-6 rounded-lg border-2 border-gray-700 bg-gray-800 hover:border-gray-600 transition-all text-left"
+                >
+                    <div className="text-4xl mb-3">🙈</div>
+                    <h3 className="text-xl font-bold mb-2">Blind Mode</h3>
+                    <p className="text-gray-300 text-sm mb-3">
+                        Create a puzzle you can play yourself - the layout stays hidden!
+                    </p>
+                    <ul className="text-sm text-gray-400 space-y-1">
+                        <li>✓ Play your own puzzle</li>
+                        <li>✓ Layout stays secret</li>
+                        <li>✓ Auto-layout under the hood</li>
+                        <li>✓ Be surprised by the result!</li>
                     </ul>
                 </button>
             </div>
